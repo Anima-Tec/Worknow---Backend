@@ -1,11 +1,9 @@
 {
   "name": "worknow---backend",
   "version": "1.0.0",
-  "main": "server.js",
-  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -20,14 +18,10 @@
   "homepage": "https://github.com/Anima-Tec/Worknow---Backend#readme",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^6.16.1",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "helmet": "^8.1.0",
-    "morgan": "^1.10.1"
+    "@prisma/client": "^6.16.2",
+    "express": "^5.1.0"
   },
   "devDependencies": {
-    "prisma": "^6.16.1"
+    "prisma": "^6.16.2"
   }
 }
