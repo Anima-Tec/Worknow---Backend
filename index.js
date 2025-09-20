@@ -1,25 +1,32 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import authRoutes from "./src/routers/authRoutes.js";
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import authRoutes from './src/routes/authRoutes.js';
+import userRoutes from './src/routes/userRoutes.js';
+import contactRoutes from './src/routes/contactRoutes.js';
+import { connectDB } from './src/config/db.js';
 
-dotenv.config(); // 👈 carga las variables del .env
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Configurar CORS para permitir el frontend
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 
 app.use(express.json());
-app.use(
-  cors({
-    origin: "http://localhost:5173", // URL de tu front
-    credentials: true,
-  })
-);
 
 // Rutas
-app.use("/api/auth", authRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/contact', contactRoutes);
 
-// Puerto
-const PORT = process.env.PORT || 3000;
+// Conexión a la base de datos
+connectDB();
+
 app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
