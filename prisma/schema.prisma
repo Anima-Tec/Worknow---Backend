@@ -24,16 +24,17 @@ model Company {
 }
 
 model Job {
-  id           String   @id @default(cuid())
-  companyName  String
+  id             String   @id @default(cuid())
+  companyName    String
   companyWebsite String
-  title        String
-  area         String
-  jobType      String
-  contractType String
-  modality     String
-  location     String
-  salaryRange  String
-  description  String
-  createdAt    DateTime @default(now())
+  title          String
+  area           String
+  jobType        String
+  contractType   String
+  modality       String
+  location       String
+  salaryRange    String
+  description    String
+  projectUrl     String
+  createdAt      DateTime @default(now())
 }
