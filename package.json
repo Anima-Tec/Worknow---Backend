@@ -1,9 +1,14 @@
 {
   "name": "worknow---backend",
   "version": "1.0.0",
+  "description": "Backend de Worknow con Express, Prisma y JWT",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev --name init"
   },
   "repository": {
     "type": "git",
@@ -16,7 +21,6 @@
     "url": "https://github.com/Anima-Tec/Worknow---Backend/issues"
   },
   "homepage": "https://github.com/Anima-Tec/Worknow---Backend#readme",
-  "description": "",
   "dependencies": {
     "@prisma/client": "^6.16.2",
     "bcrypt": "^6.0.0",
@@ -26,6 +30,6 @@
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
-    "prisma": "^6.16.2"
+    "prisma": "^6.16.3"
   }
 }
