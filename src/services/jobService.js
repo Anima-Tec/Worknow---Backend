@@ -1,4 +1,5 @@
-import prisma from "../database/prismaClient.js";
+import { prisma } from "../database/prismaClient.js";
+
 
 export async function createJob(data) {
   return prisma.job.create({ data });
