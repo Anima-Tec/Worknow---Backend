@@ -1,7 +1,7 @@
 node_modules
 # Keep environment variables out of version control
 .env
-
+dev.db
 node_modules
 
 /src/generated/prisma
