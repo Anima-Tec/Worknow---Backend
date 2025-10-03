@@ -7,14 +7,9 @@ export const login = async (req, res) => {
 
   try {
     // Buscar en User o en Company
-    let account =
+    const account =
       (await prisma.user.findUnique({ where: { email } })) ||
       (await prisma.company.findUnique({ where: { email } }));
-
-
-const test = await bcrypt.compare("123456", account.password);
-console.log("🔬 Comparando '123456' directamente:", test);
-
 
     if (!account) {
       return res.status(404).json({ message: "Usuario no encontrado" });
@@ -26,13 +21,14 @@ console.log("🔬 Comparando '123456' directamente:", test);
       return res.status(401).json({ message: "Contraseña incorrecta" });
     }
 
-    // Crear token
+    // Crear token JWT
     const token = jwt.sign(
       { id: account.id, email: account.email, role: account.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
+    // Responder con token y datos del usuario
     return res.json({
       token,
       user: {
@@ -42,7 +38,6 @@ console.log("🔬 Comparando '123456' directamente:", test);
       },
     });
   } catch (err) {
-    console.error("❌ Error en login:", err);
     res.status(500).json({ message: "Error interno del servidor" });
   }
 };
