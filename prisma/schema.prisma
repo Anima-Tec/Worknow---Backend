@@ -70,8 +70,8 @@ model Job {
   modality       String
   location       String
   salaryRange    String
-  description    String
-  projectUrl     String?   // 👈 NUEVO CAMPO (puede ser null)
+  description    String   
   createdAt      DateTime  @default(now())
+   projectUrl   String?
 }
 
