@@ -1,18 +1,24 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.warn("⚠️ JWT_SECRET no está definido en .env");
+}
 
 export function requireAuth(req, res, next) {
-  const header = req.headers.authorization || "";
-  const [, token] = header.split(" ");
-  if (!token) return res.status(401).json({ error: "Token requerido" });
+  const auth = req.headers.authorization || "";
+  const [scheme, token] = auth.split(" ");
+
+  if (scheme !== "Bearer" || !token) {
+    return res.status(401).json({ error: "Token requerido o inválido" });
+  }
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload; // { id, role }
+    req.user = payload; // { id, email, role }
     next();
-  } catch {
-    return res.status(401).json({ error: "Token inválido" });
+  } catch (err) {
+    return res.status(401).json({ error: "Token inválido o expirado" });
   }
 }
 
