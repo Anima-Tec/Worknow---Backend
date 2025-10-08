@@ -3,34 +3,34 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./src/routers/authRoutes.js";
 import jobRoutes from "./src/routers/jobRoutes.js";
+import projectRoutes from "./src/routers/projectRoutes.js";
 
 dotenv.config();
 
 const app = express();
 
-// Middleware base
+// 🧩 Middleware base
 app.use(express.json());
-
-// ✅ Configuración CORRECTA de CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN, // tu frontend exacto
-    credentials: true, // habilita envío de cookies o headers de autenticación
+    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Healthcheck para comprobar el backend
+// 🩺 Healthcheck
 app.get("/", (_req, res) => {
   res.json({ ok: true, message: "Servidor WorkNow corriendo ✅" });
 });
 
-// Rutas
+// 🚀 Rutas principales
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
+app.use("/api/projects", projectRoutes); 
 
-// Puerto
+// 🔊 Servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
