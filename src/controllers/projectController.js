@@ -1,43 +1,58 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { prisma } from "../database/prismaClient.js";
 
-export const login = async (req, res) => {
-  const { email, password } = req.body;
-
+export async function createProjectController(req, res) {
   try {
-    // Buscar en User o en Company
-    const account =
-      (await prisma.user.findUnique({ where: { email } })) ||
-      (await prisma.company.findUnique({ where: { email } }));
+    const { title, description, skills, duration, modality, remuneration, location } = req.body;
 
-    if (!account) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    // Validar contraseña
-    const valid = await bcrypt.compare(password, account.password);
-    if (!valid) {
-      return res.status(401).json({ message: "Contraseña incorrecta" });
-    }
-
-    // Crear token JWT
-    const token = jwt.sign(
-      { id: account.id, email: account.email, role: account.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    // Responder con token y datos del usuario
-    return res.json({
-      token,
-      user: {
-        id: account.id,
-        email: account.email,
-        role: account.role,
+    const project = await prisma.project.create({
+      data: {
+        title,
+        description,
+        skills,
+        duration,
+        modality,
+        remuneration,
+        location,
+        isActive: true,
+        companyId: req.user?.id || 1, // si usás auth, toma el id del token
       },
     });
-  } catch (err) {
-    res.status(500).json({ message: "Error interno del servidor" });
+
+    res.json(project);
+  } catch (error) {
+    console.error("❌ Error creando proyecto:", error);
+    res.status(500).json({ error: "Error creando proyecto" });
   }
-};
+}
+
+export async function listPublicProjectsController(req, res) {
+  try {
+    const projects = await prisma.project.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(projects);
+  } catch (error) {
+    console.error("❌ Error obteniendo proyectos:", error);
+    res.status(500).json({ error: "Error obteniendo proyectos" });
+  }
+}
+
+export async function getCompanyProjectsController(req, res) {
+  try {
+    const companyId = req.user?.id;
+    if (!companyId) {
+      return res.status(401).json({ error: "No autorizado" });
+    }
+
+    const projects = await prisma.project.findMany({
+      where: { companyId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(projects);
+  } catch (error) {
+    console.error("❌ Error obteniendo proyectos de empresa:", error);
+    res.status(500).json({ error: "Error obteniendo proyectos de empresa" });
+  }
+}
