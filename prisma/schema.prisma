@@ -8,13 +8,23 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  role      String   @default("USER")
-  createdAt DateTime @default(now())
+  id               Int       @id @default(autoincrement())
+  nombre           String?   
+  apellido         String?   
+  email            String    @unique
+  password         String
+  telefono         String?   
+  fechaNacimiento  DateTime? 
+  ciudad           String?   
+  profesion        String?   
+  biografia        String?   
+  experiencia      String?   
+  educacion        String?   
+  habilidades      String?   
+  role             String    @default("USER")
+  createdAt        DateTime  @default(now())
 
-  applications ProjectApplication[]   // 
+  applications ProjectApplication[]
 }
 
 model Company {
@@ -24,7 +34,7 @@ model Company {
   role      String   @default("COMPANY")
   createdAt DateTime @default(now())
 
-  projects  Project[]   // 
+  projects  Project[]
 }
 
 model Project {
@@ -59,6 +69,7 @@ model ProjectApplication {
 
   @@unique([userId, projectId])
 }
+
 model Job {
   id             Int      @id @default(autoincrement())
   companyName    String
@@ -72,6 +83,5 @@ model Job {
   salaryRange    String
   description    String   
   createdAt      DateTime  @default(now())
-   projectUrl   String?
+  projectUrl     String?
 }
-
