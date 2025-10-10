@@ -1,9 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+
+// 🧩 Importar rutas
 import authRoutes from "./src/routers/authRoutes.js";
 import jobRoutes from "./src/routers/jobRoutes.js";
 import projectRoutes from "./src/routers/projectRoutes.js";
+import applicationRoutes from "./src/routers/applicationRoutes.js"; // ✅ IMPORT CORRECTO
 
 dotenv.config();
 
@@ -25,10 +28,22 @@ app.get("/", (_req, res) => {
   res.json({ ok: true, message: "Servidor WorkNow corriendo ✅" });
 });
 
-// 🚀 Rutas principales
+// 🚀 Rutas API
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
-app.use("/api/projects", projectRoutes); 
+app.use("/api/projects", projectRoutes);
+app.use("/api/applications", applicationRoutes); // 🟣 NUEVA RUTA AGREGADA
+
+// ⚠️ Ruta no encontrada (404)
+app.use((req, res) => {
+  res.status(404).json({ error: "Ruta no encontrada" });
+});
+
+// 💥 Manejo global de errores
+app.use((err, _req, res, _next) => {
+  console.error("❌ Error no manejado:", err);
+  res.status(500).json({ error: "Error interno del servidor" });
+});
 
 // 🔊 Servidor
 const PORT = process.env.PORT || 3000;
