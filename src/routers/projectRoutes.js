@@ -5,7 +5,7 @@ import {
   getCompanyProjectsController,
   getProjectByIdController,
 } from "../controllers/projectController.js";
-import { requireAuth, requireCompany } from "../middlewares/auth.js";
+import { requireAuth, requireCompany, requireUser } from "../middlewares/auth.js";
 
 const router = express.Router();
 
