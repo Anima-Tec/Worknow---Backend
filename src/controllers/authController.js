@@ -44,7 +44,7 @@ export const login = async (req, res) => {
 };
 
 // ----------------------------------------
-// REGISTRO DE USUARIO
+// REGISTRO DE USUARIO (versión estable)
 // ----------------------------------------
 export const registerUser = async (req, res) => {
   try {
@@ -61,19 +61,34 @@ export const registerUser = async (req, res) => {
 
     // Verificar si ya existe
     const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(400).json({ message: "El email ya está registrado" });
+    if (existing)
+      return res
+        .status(400)
+        .json({ message: "El email ya está registrado" });
 
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear usuario en BD
+    // Convertir fecha a DateTime si viene como string
+    let fechaConvertida = null;
+    if (fechaNacimiento) {
+      fechaConvertida = new Date(fechaNacimiento);
+      // Validar que la fecha sea válida
+      if (isNaN(fechaConvertida.getTime())) {
+        return res.status(400).json({ 
+          message: "Fecha de nacimiento inválida. Usa formato YYYY-MM-DD" 
+        });
+      }
+    }
+
+    // Guardar usuario completo
     const user = await prisma.user.create({
       data: {
         nombre,
         apellido,
         email,
         telefono,
-        fechaNacimiento,
+        fechaNacimiento: fechaConvertida,
         ciudad,
         profesion,
         password: hashedPassword,
@@ -81,13 +96,22 @@ export const registerUser = async (req, res) => {
       },
     });
 
-    return res.status(201).json({
-      message: "Usuario registrado con éxito",
-      user: { id: user.id, email: user.email },
+    // ✅ IMPORTANTE: No devolver el password
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.status(201).json({
+      message: "✅ Usuario registrado con éxito",
+      user: userWithoutPassword,
     });
   } catch (error) {
     console.error("❌ Error en registerUser:", error);
-    return res.status(500).json({ message: "Error en el registro" });
+    console.error("❌ Stack trace:", error.stack);
+    console.error("❌ Datos recibidos:", req.body);
+    res.status(500).json({
+      message: "Error en el registro",
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -122,10 +146,13 @@ export const registerCompany = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    // No devolver el password
+    const { password: _, ...companyWithoutPassword } = newCompany;
+
     return res.status(201).json({
       message: "Empresa registrada correctamente",
       token,
-      company: newCompany,
+      company: companyWithoutPassword,
     });
   } catch (error) {
     console.error("❌ Error en registerCompany:", error);
@@ -142,12 +169,34 @@ export const getProfile = async (req, res) => {
 
     if (role === "USER") {
       const user = await prisma.user.findUnique({ where: { id } });
-      return res.json(user);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      // ✅ CRÍTICO: NO devolver el password
+      const { password, ...userWithoutPassword } = user;
+      
+      // ✅ Convertir fechaNacimiento a formato YYYY-MM-DD para el input date
+      if (userWithoutPassword.fechaNacimiento) {
+        userWithoutPassword.fechaNacimiento = userWithoutPassword.fechaNacimiento
+          .toISOString()
+          .split('T')[0];
+      }
+
+      return res.json(userWithoutPassword);
     }
 
     if (role === "COMPANY") {
       const company = await prisma.company.findUnique({ where: { id } });
-      return res.json(company);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Empresa no encontrada" });
+      }
+
+      // No devolver el password
+      const { password, ...companyWithoutPassword } = company;
+      return res.json(companyWithoutPassword);
     }
 
     return res.status(400).json({ message: "Rol no válido" });
@@ -156,6 +205,7 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 };
+
 // ----------------------------------------
 // PERFIL - ACTUALIZAR DATOS SEGÚN ROL
 // ----------------------------------------
@@ -164,19 +214,67 @@ export const updateProfile = async (req, res) => {
     const { id, role } = req.user;
     const data = req.body;
 
+    // ✅ SEGURIDAD: Eliminar campos que NO deben actualizarse directamente
+    delete data.password;
+    delete data.email;
+    delete data.role;
+    delete data.id;
+    delete data.createdAt;
+
     if (role === "USER") {
-      const updated = await prisma.user.update({ where: { id }, data });
-      return res.json({ message: "Perfil de usuario actualizado", updated });
+      // ✅ Convertir fechaNacimiento si viene en el body
+      if (data.fechaNacimiento) {
+        const fecha = new Date(data.fechaNacimiento);
+        if (isNaN(fecha.getTime())) {
+          return res.status(400).json({ 
+            message: "Fecha de nacimiento inválida" 
+          });
+        }
+        data.fechaNacimiento = fecha;
+      }
+
+      const updated = await prisma.user.update({ 
+        where: { id }, 
+        data 
+      });
+
+      // No devolver el password
+      const { password, ...updatedWithoutPassword } = updated;
+
+      // Convertir fecha para el frontend
+      if (updatedWithoutPassword.fechaNacimiento) {
+        updatedWithoutPassword.fechaNacimiento = updatedWithoutPassword.fechaNacimiento
+          .toISOString()
+          .split('T')[0];
+      }
+
+      return res.json({ 
+        message: "Perfil de usuario actualizado", 
+        updated: updatedWithoutPassword 
+      });
     }
 
     if (role === "COMPANY") {
-      const updated = await prisma.company.update({ where: { id }, data });
-      return res.json({ message: "Perfil de empresa actualizado", updated });
+      const updated = await prisma.company.update({ 
+        where: { id }, 
+        data 
+      });
+
+      // No devolver el password
+      const { password, ...updatedWithoutPassword } = updated;
+
+      return res.json({ 
+        message: "Perfil de empresa actualizado", 
+        updated: updatedWithoutPassword 
+      });
     }
 
     return res.status(400).json({ message: "Rol no válido" });
   } catch (error) {
     console.error("❌ Error actualizando perfil:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.status(500).json({ 
+      message: "Error interno del servidor",
+      error: error.message 
+    });
   }
 };

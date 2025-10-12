@@ -1,11 +1,11 @@
+import dotenv from "dotenv";
+dotenv.config(); // ✅ Cargar variables antes de todo
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import authRoutes from "./src/routers/authRoutes.js";
 import jobRoutes from "./src/routers/jobRoutes.js";
 import projectRoutes from "./src/routers/projectRoutes.js";
-
-dotenv.config();
 
 const app = express();
 
@@ -28,11 +28,12 @@ app.get("/", (_req, res) => {
 // 🚀 Rutas principales
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
-app.use("/api/projects", projectRoutes); 
+app.use("/api/projects", projectRoutes);
 
 // 🔊 Servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
   console.log(`🌍 CORS permitido para: ${process.env.CLIENT_ORIGIN}`);
+  console.log(`🔐 JWT_SECRET: ${process.env.JWT_SECRET ? "✅ cargado" : "❌ no definido"}`);
 });
