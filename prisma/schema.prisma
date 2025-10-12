@@ -8,11 +8,23 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  role      String   @default("USER")
-  createdAt DateTime @default(now())
+  id               Int       @id @default(autoincrement())
+  nombre           String?   
+  apellido         String?   
+  email            String    @unique
+  password         String
+  telefono         String?   
+  fechaNacimiento  DateTime? 
+  ciudad           String?   
+  profesion        String?   
+  biografia        String?   
+  experiencia      String?   
+  educacion        String?   
+  habilidades      String?   
+  role             String    @default("USER")
+  createdAt        DateTime  @default(now())
+
+  applications     ProjectApplication[]
 }
 
 model Company {
@@ -21,4 +33,55 @@ model Company {
   password  String
   role      String   @default("COMPANY")
   createdAt DateTime @default(now())
+
+  projects  Project[]
+}
+
+model Project {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String
+  skills       Json?
+  duration     String?
+  modality     String?
+  remuneration String?
+  location     String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  companyId Int
+  company   Company     @relation(fields: [companyId], references: [id])
+
+  applications ProjectApplication[]
+}
+
+model ProjectApplication {
+  id        Int      @id @default(autoincrement())
+  message   String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  userId    Int
+  projectId Int
+  user      User     @relation(fields: [userId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id])
+
+  @@unique([userId, projectId])
+}
+
+model Job {
+  id             Int      @id @default(autoincrement())
+  companyName    String
+  companyWebsite String?
+  title          String
+  area           String
+  jobType        String
+  contractType   String
+  modality       String
+  location       String
+  salaryRange    String
+  description    String   
+  createdAt      DateTime  @default(now())
+  projectUrl     String?
 }
