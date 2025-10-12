@@ -1,22 +1,20 @@
-import { Router } from "express";
+import express from "express";
 import {
   createProjectController,
   listPublicProjectsController,
   getCompanyProjectsController,
+  getProjectByIdController,
 } from "../controllers/projectController.js";
-import { applyToProjectController } from "../controllers/applicationController.js";
-import { requireAuth, requireCompany, requireUser } from "../middlewares/auth.js";
+import { requireAuth, requireCompany } from "../middlewares/auth.js";
 
-const router = Router();
+const router = express.Router();
 
 // Público
 router.get("/", listPublicProjectsController);
+router.get("/:id", getProjectByIdController);
 
-// Empresa
+// Privado (empresa)
 router.post("/", requireAuth, requireCompany, createProjectController);
 router.get("/company/me", requireAuth, requireCompany, getCompanyProjectsController);
-
-// Usuario se postula
-router.post("/:id/apply", requireAuth, requireUser, applyToProjectController);
 
 export default router;
