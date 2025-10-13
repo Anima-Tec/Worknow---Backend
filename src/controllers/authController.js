@@ -120,7 +120,21 @@ export const registerUser = async (req, res) => {
 // ----------------------------------------
 export const registerCompany = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { 
+       email,
+      password,
+      nombreEmpresa,
+      rut,
+      telefono,
+      direccion,
+      ciudad,
+      sector,
+      sitioWeb,
+      tamano,
+      descripcion,
+      logoUrl
+    } = req.body;
+
 
     // Verificar si ya existe
     const existing = await prisma.company.findUnique({ where: { email } });
@@ -132,10 +146,20 @@ export const registerCompany = async (req, res) => {
 
     // Crear nueva empresa
     const newCompany = await prisma.company.create({
-      data: {
+        data: {
         email,
         password: hashedPassword,
         role: "COMPANY",
+        nombreEmpresa,
+        rut: rut || null,
+        telefono: telefono || null,
+        direccion: direccion || null,
+        ciudad: ciudad || null,
+        sector: sector || null,
+        sitioWeb: sitioWeb || null,
+        tamano: tamano || null,
+        descripcion: descripcion || null,
+        logoUrl: logoUrl || null,
       },
     });
 
@@ -156,7 +180,7 @@ export const registerCompany = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error en registerCompany:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.status(500).json({ message: "Error interno del servidor", error: error.message});
   }
 };
 
@@ -278,3 +302,4 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
+
