@@ -116,26 +116,57 @@ export const registerUser = async (req, res) => {
 };
 
 // ----------------------------------------
-// REGISTRO DE EMPRESA
+// REGISTRO DE EMPRESA (MEJORADO CON TODOS LOS CAMPOS)
 // ----------------------------------------
 export const registerCompany = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { 
+      email, 
+      password,
+      nombreEmpresa,
+      rut,
+      telefono,
+      direccion,
+      ciudad,
+      sector,
+      sitioWeb,
+      tamano,
+      descripcion,
+      logoUrl
+    } = req.body;
+
+    // Verificar campos obligatorios
+    if (!email || !password || !nombreEmpresa) {
+      return res.status(400).json({ 
+        message: "Email, contraseña y nombre de empresa son obligatorios" 
+      });
+    }
 
     // Verificar si ya existe
     const existing = await prisma.company.findUnique({ where: { email } });
-    if (existing)
+    if (existing) {
       return res.status(400).json({ message: "La empresa ya existe" });
+    }
 
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear nueva empresa
+    // Crear nueva empresa con todos los datos
     const newCompany = await prisma.company.create({
       data: {
         email,
         password: hashedPassword,
         role: "COMPANY",
+        nombreEmpresa,
+        rut: rut || null,
+        telefono: telefono || null,
+        direccion: direccion || null,
+        ciudad: ciudad || null,
+        sector: sector || null,
+        sitioWeb: sitioWeb || null,
+        tamano: tamano || null,
+        descripcion: descripcion || null,
+        logoUrl: logoUrl || null,
       },
     });
 
@@ -150,13 +181,16 @@ export const registerCompany = async (req, res) => {
     const { password: _, ...companyWithoutPassword } = newCompany;
 
     return res.status(201).json({
-      message: "Empresa registrada correctamente",
+      message: "✅ Empresa registrada correctamente",
       token,
       company: companyWithoutPassword,
     });
   } catch (error) {
     console.error("❌ Error en registerCompany:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.status(500).json({ 
+      message: "Error interno del servidor",
+      error: error.message 
+    });
   }
 };
 
@@ -264,7 +298,7 @@ export const updateProfile = async (req, res) => {
       const { password, ...updatedWithoutPassword } = updated;
 
       return res.json({ 
-        message: "Perfil de empresa actualizado", 
+        message: "✅ Perfil de empresa actualizado", 
         updated: updatedWithoutPassword 
       });
     }

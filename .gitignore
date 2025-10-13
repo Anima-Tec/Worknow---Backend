@@ -1,7 +1,19 @@
-node_modules
-# Keep environment variables out of version control
-.env
-dev.db
-node_modules
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
 
-/src/generated/prisma
+# Prisma - solo ignora binarios y clientes generados, NO tu carpeta principal
+node_modules/.prisma/
+node_modules/@prisma/
+node_modules/@prisma/client/
+node_modules/.cache/
+prisma/dev.db
+
+# Environment
+.env
+
+# OS / Editor
+.vscode/
+.idea/
+.DS_Store
