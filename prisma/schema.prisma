@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  COMPANY
+}
+
 model User {
   id               Int       @id @default(autoincrement())
   nombre           String?   
@@ -28,13 +33,31 @@ model User {
 }
 
 model Company {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  role      String   @default("COMPANY")
-  createdAt DateTime @default(now())
-
-  projects  Project[]
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  role          Role     @default(COMPANY)
+  nombreEmpresa String
+  rut           String?
+  telefono      String?
+  direccion     String?
+  ciudad        String?
+  sector        String?
+  sitioWeb      String?
+  tamano        String?
+  descripcion   String?
+  logoUrl       String?
+  fundada       String?
+  empleados     String?
+  ubicaciones   String?
+  mision        String?
+  vision        String?
+  twitter       String?
+  facebook      String?
+  linkedin      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  projects Project[]
 }
 
 model Project {
