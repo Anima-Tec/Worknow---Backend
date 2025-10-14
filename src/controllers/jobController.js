@@ -196,3 +196,46 @@ export async function deleteJobController(req, res) {
     return res.status(500).json({ error: "Error eliminando trabajo" });
   }
 }
+export const listPublicJobsController = async (req, res) => {
+  try {
+    console.log("🔍 Buscando trabajos activos sin postulaciones aceptadas...");
+
+    const jobs = await prisma.job.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        company: {
+          select: { nombreEmpresa: true },
+        },
+        applications: {
+          where: { status: "ACCEPTED" },
+          select: { id: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // 🔥 Filtrar trabajos que NO tengan ninguna aplicación aceptada
+    const availableJobs = jobs.filter((job) => job.applications.length === 0);
+
+    console.log(`🎯 Trabajos disponibles: ${availableJobs.length}`);
+
+    const formattedJobs = availableJobs.map((j) => ({
+      id: j.id,
+      title: j.title,
+      company: j.company?.nombreEmpresa || "WorkNow",
+      area: j.area || "General",
+      jobType: j.jobType || "N/A",
+      contractType: j.contractType || "Contrato indefinido",
+      modality: j.modality || "No especificada",
+      location: j.location || "Ubicación no especificada",
+      salary: j.salary || "A convenir",
+    }));
+
+    res.json(formattedJobs);
+  } catch (error) {
+    console.error("❌ Error listando trabajos:", error);
+    res.status(500).json({ error: "Error obteniendo trabajos" });
+  }
+};

@@ -1,39 +1,40 @@
 import express from "express";
 import {
   applyToProjectController,
+  applyToJobController,
   getCompanyApplicationsController,
   updateApplicationStatusController,
   getMyApplicationsController,
   markAsReadController,
   getNotificationCountController,
-  updateMyApplicationStatusController, // ✅ IMPORT AGREGADO
+  updateMyApplicationStatusController,
 } from "../controllers/applicationController.js";
-
-import { requireAuth, requireCompany } from "../middlewares/auth.js";
-// 🟣 si más adelante querés validar que solo USER acceda a ciertas rutas, 
-// podés agregar acá: import { requireUser } from "../middlewares/auth.js";
+import { requireAuth, requireCompany, requireUser } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// 🧩 Usuario se postula a proyecto
-router.post("/project/:id/apply", requireAuth, applyToProjectController);
+// ✅ Usuario se postula a proyecto
+router.post("/project/:id/apply", requireAuth, requireUser, applyToProjectController);
 
-// 🏢 Empresa ve sus postulaciones
+// ✅ Usuario se postula a trabajo
+router.post("/job/:id/apply", requireAuth, requireUser, applyToJobController);
+
+// ✅ Empresa ve sus postulaciones (💡 ESTA ES LA QUE FALLA)
 router.get("/company/me", requireAuth, requireCompany, getCompanyApplicationsController);
 
-// 🏢 Empresa actualiza el estado de una postulación
+// ✅ Empresa actualiza estado
 router.put("/:id", requireAuth, requireCompany, updateApplicationStatusController);
 
-// 👤 Usuario obtiene sus propias postulaciones
-router.get("/user/me", requireAuth, getMyApplicationsController);
+// ✅ Usuario obtiene sus postulaciones
+router.get("/user/me", requireAuth, requireUser, getMyApplicationsController);
 
-// 🔔 Usuario obtiene cantidad de notificaciones
+// ✅ Notificaciones
 router.get("/notifications/count", requireAuth, getNotificationCountController);
 
-// 👁️ Usuario marca una postulación como leída
+// ✅ Marcar como leída
 router.put("/:id/mark-read", requireAuth, markAsReadController);
 
-// 🟣 Usuario actualiza el estado de su propia postulación (Hecho/No hecho)
+// ✅ Usuario actualiza estado (Hecho / No hecho)
 router.put("/user/:id/status", requireAuth, updateMyApplicationStatusController);
 
 export default router;

@@ -295,3 +295,44 @@ export const updateMyApplicationStatusController = async (req, res) => {
     res.status(500).json({ message: "Error actualizando estado de postulación" });
   }
 };
+// 🟣 Usuario se postula a un trabajo
+export const applyToJobController = async (req, res) => {
+  try {
+    const jobId = Number(req.params.id);
+    const userId = req.user?.id;
+    const { name, email } = req.body;
+
+    console.log(`📝 Usuario ${userId} postulándose al trabajo ${jobId}`);
+
+    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
+    if (!jobId) return res.status(400).json({ message: "ID de trabajo requerido" });
+
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    if (!job) return res.status(404).json({ message: "Trabajo no encontrado" });
+
+    const existing = await prisma.jobApplication.findUnique({
+      where: { userId_jobId: { userId, jobId } },
+    });
+    if (existing) return res.status(409).json({ message: "Ya te postulaste a este trabajo" });
+
+    const application = await prisma.jobApplication.create({
+      data: {
+        userId,
+        jobId,
+        status: "PENDING",
+        message: name && email ? `Postulación de ${name} (${email})` : "Postulación realizada",
+      },
+      include: {
+        user: { select: { nombre: true, email: true } },
+        job: { select: { title: true } },
+      },
+    });
+
+    console.log("✅ Postulación creada correctamente:", application.id);
+    res.status(201).json({ message: "✅ Postulación creada correctamente", application });
+  } catch (error) {
+    console.error("❌ Error creando postulación de trabajo:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+

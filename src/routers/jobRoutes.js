@@ -6,7 +6,8 @@ import {
   getJobByIdController,
   updateJobController,
   deleteJobController,
-  getCompanyJobsController
+  getCompanyJobsController,
+ listPublicJobsController,
 } from "../controllers/jobController.js";
 import { requireAuth, requireCompany } from "../middlewares/auth.js";
 
@@ -27,5 +28,6 @@ router.get("/:id", getJobByIdController);
 // 🟣 Actualizar o eliminar (solo empresa)
 router.put("/:id", requireAuth, requireCompany, updateJobController);
 router.delete("/:id", requireAuth, requireCompany, deleteJobController);
+router.get("/", listPublicJobsController);
 
 export default router;

@@ -33,73 +33,59 @@ export async function createProjectController(req, res) {
 
 export async function listPublicProjectsController(req, res) {
   try {
-    console.log("🔍 Buscando proyectos activos NO completados...");
+    const userId = req.user?.id || null;
+    console.log(`🔍 Cargando proyectos activos (userId: ${userId || "anon"})`);
 
-    // OPCIÓN ROBUSTA: Doble filtro
+    // 🔹 Traemos todos los proyectos activos (sin limitar por postulaciones)
     const projects = await prisma.project.findMany({
-      where: { 
-        isActive: true
-      },
+      where: { isActive: true },
       include: {
         company: {
-          select: { 
-            nombreEmpresa: true,
-            email: true 
-          },
+          select: { nombreEmpresa: true, email: true },
         },
-        applications: {
-          where: {
-            status: {
-              in: ["Hecho", "HECHO"]
-            }
-          },
-          select: {
-            id: true,
-            status: true
-          }
-        }
+        // Si hay usuario logueado, traemos sus postulaciones
+        applications: userId
+          ? { where: { userId }, select: { status: true } }
+          : false,
       },
       orderBy: { createdAt: "desc" },
     });
 
-    // Filtrar proyectos que NO estén completados Y NO tengan aplicaciones "Hecho"
-    const availableProjects = projects.filter(project => 
-      project.isCompleted === false && 
-      project.applications.length === 0
+    // 🔹 Transformamos para incluir userStatus
+    const formatted = projects
+      .map((p) => ({
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        skills: p.skills,
+        duration: p.duration,
+        modality: p.modality,
+        remuneration: p.remuneration,
+        location: p.location,
+        isActive: p.isActive,
+        isCompleted: p.isCompleted,
+        company: p.company?.nombreEmpresa || p.company?.email || "WorkNow",
+        userStatus: p.applications?.[0]?.status || "NONE",
+      }))
+      // 🔥 Ocultar los que están completados o HECHO/ACEPTADO
+      .filter(
+        (p) =>
+          !p.isCompleted &&
+          p.userStatus.toUpperCase() !== "HECHO" &&
+          p.userStatus.toUpperCase() !== "ACEPTADO"
+      );
+
+    console.log(
+      `✅ ${formatted.length} proyectos enviados (de ${projects.length} totales)`
     );
 
-    console.log(`📊 PROYECTOS ENCONTRADOS: ${projects.length}`);
-    console.log(`🎯 PROYECTOS DISPONIBLES: ${availableProjects.length}`);
-    
-    console.log("📋 Lista completa de proyectos:");
-    projects.forEach(p => {
-      console.log(`   - "${p.title}" | ID: ${p.id} | isCompleted: ${p.isCompleted} | Aplicaciones "Hecho": ${p.applications.length}`);
-    });
-
-    const formattedProjects = availableProjects.map((p) => ({
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      skills: p.skills,
-      duration: p.duration,
-      modality: p.modality,
-      remuneration: p.remuneration,
-      location: p.location,
-      isActive: p.isActive,
-      isCompleted: p.isCompleted,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
-      company: p.company?.nombreEmpresa || p.company?.email || "WorkNow",
-    }));
-
-    console.log(`🎯 Enviando ${formattedProjects.length} proyectos disponibles al frontend`);
-
-    res.json(formattedProjects);
+    res.json(formatted);
   } catch (error) {
     console.error("❌ Error obteniendo proyectos:", error);
     res.status(500).json({ error: "Error obteniendo proyectos" });
   }
 }
+
 
 // ✅ Obtener un proyecto por ID (para ApplyModal)
 export async function getProjectByIdController(req, res) {
