@@ -23,7 +23,26 @@ CREATE TABLE "Company" (
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'COMPANY',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "nombreEmpresa" TEXT NOT NULL,
+    "rut" TEXT,
+    "telefono" TEXT,
+    "direccion" TEXT,
+    "ciudad" TEXT,
+    "sector" TEXT,
+    "sitioWeb" TEXT,
+    "tamano" TEXT,
+    "descripcion" TEXT,
+    "logoUrl" TEXT,
+    "fundada" TEXT,
+    "empleados" TEXT,
+    "ubicaciones" TEXT,
+    "mision" TEXT,
+    "vision" TEXT,
+    "twitter" TEXT,
+    "facebook" TEXT,
+    "linkedin" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
 );
 
 -- CreateTable
@@ -48,7 +67,9 @@ CREATE TABLE "ProjectApplication" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "message" TEXT,
     "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "visto" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
     "userId" INTEGER NOT NULL,
     "projectId" INTEGER NOT NULL,
     CONSTRAINT "ProjectApplication_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,

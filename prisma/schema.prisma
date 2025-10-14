@@ -30,6 +30,7 @@ model User {
   createdAt        DateTime  @default(now())
 
   applications     ProjectApplication[]
+  completedProjects CompletedProject[] // ← RELACIÓN AGREGADA
 }
 
 model Company {
@@ -70,6 +71,7 @@ model Project {
   remuneration String?
   location     String?
   isActive     Boolean   @default(true)
+  isCompleted  Boolean   @default(false) // ← NUEVO CAMPO AGREGADO
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -83,8 +85,10 @@ model ProjectApplication {
   id        Int      @id @default(autoincrement())
   message   String?
   status    String   @default("PENDING")
+  visto     Boolean  @default(false)
   createdAt DateTime @default(now())
-
+  updatedAt DateTime @updatedAt
+  
   userId    Int
   projectId Int
   user      User     @relation(fields: [userId], references: [id])
@@ -107,4 +111,22 @@ model Job {
   description    String   
   createdAt      DateTime  @default(now())
   projectUrl     String?
+}
+
+model CompletedProject {
+  id               Int      @id @default(autoincrement())
+  projectTitle     String
+  companyName      String
+  description      String?
+  completionDate   DateTime @default(now())
+  skills           String?   // ← NUEVO: Habilidades utilizadas
+  duration         String?   // ← NUEVO: Duración del proyecto
+  modality         String?   // ← NUEVO: Modalidad del proyecto
+  remuneration     String?   // ← NUEVO: Remuneración recibida
+  
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId    Int?     // Referencia a la postulación original
+  
+  createdAt        DateTime @default(now())
 }
