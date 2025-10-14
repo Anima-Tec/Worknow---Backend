@@ -1,5 +1,103 @@
 import { prisma } from "../database/prismaClient.js";
 
+export async function listPublicProjectsController(req, res) {
+  try {
+    const userId = req.user?.id || null;
+    const { query } = req.query;
+    
+    console.log(`🔍 Cargando proyectos...`, { query });
+
+    let projects = await prisma.project.findMany({
+      where: { 
+        isActive: true 
+      },
+      include: {
+        company: {
+          select: { nombreEmpresa: true, email: true, ciudad: true, sector: true },
+        },
+        applications: userId
+          ? { where: { userId }, select: { status: true } }
+          : false,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // 👇 BUSCAR EN TODOS LOS CAMPOS DEL PROYECTO Y EMPRESA
+    if (query && query.trim() !== '') {
+      const searchQuery = query.trim().toLowerCase();
+      projects = projects.filter(project => {
+        // Campos del proyecto
+        const title = project.title ? project.title.toLowerCase() : '';
+        const description = project.description ? project.description.toLowerCase() : '';
+        const skills = project.skills ? JSON.stringify(project.skills).toLowerCase() : '';
+        const location = project.location ? project.location.toLowerCase() : '';
+        const remuneration = project.remuneration ? project.remuneration.toLowerCase() : '';
+        const modality = project.modality ? project.modality.toLowerCase() : '';
+        const duration = project.duration ? project.duration.toLowerCase() : '';
+        
+        // Campos de la empresa
+        const companyName = project.company?.nombreEmpresa ? project.company.nombreEmpresa.toLowerCase() : '';
+        const companyEmail = project.company?.email ? project.company.email.toLowerCase() : '';
+        const companyCity = project.company?.ciudad ? project.company.ciudad.toLowerCase() : '';
+        const companySector = project.company?.sector ? project.company.sector.toLowerCase() : '';
+
+        // Buscar en TODOS los campos
+        return (
+          title.includes(searchQuery) ||
+          description.includes(searchQuery) ||
+          skills.includes(searchQuery) ||
+          location.includes(searchQuery) ||
+          remuneration.includes(searchQuery) ||
+          modality.includes(searchQuery) ||
+          duration.includes(searchQuery) ||
+          companyName.includes(searchQuery) ||
+          companyEmail.includes(searchQuery) ||
+          companyCity.includes(searchQuery) ||
+          companySector.includes(searchQuery)
+        );
+      });
+    }
+
+    console.log("📝 Datos reales de proyectos:", projects.map(project => ({
+      title: project.title,
+      company: project.company?.nombreEmpresa,
+      location: project.location,
+      skills: project.skills
+    })));
+
+    // 🔹 Transformamos para incluir userStatus
+    const formatted = projects
+      .map((p) => ({
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        skills: p.skills,
+        duration: p.duration,
+        modality: p.modality,
+        remuneration: p.remuneration,
+        location: p.location,
+        isActive: p.isActive,
+        isCompleted: p.isCompleted,
+        company: p.company?.nombreEmpresa || p.company?.email || "WorkNow",
+        userStatus: p.applications?.[0]?.status || "NONE",
+      }))
+      // 🔥 Ocultar los que están completados o HECHO/ACEPTADO
+      .filter(
+        (p) =>
+          !p.isCompleted &&
+          p.userStatus.toUpperCase() !== "HECHO" &&
+          p.userStatus.toUpperCase() !== "ACEPTADO"
+      );
+
+    console.log(`✅ ${formatted.length} proyectos enviados`);
+
+    res.json(formatted);
+  } catch (error) {
+    console.error("❌ Error obteniendo proyectos:", error);
+    res.status(500).json({ error: "Error obteniendo proyectos" });
+  }
+}
+
 // ✅ Crear un nuevo proyecto
 export async function createProjectController(req, res) {
   try {
@@ -30,62 +128,6 @@ export async function createProjectController(req, res) {
     res.status(500).json({ error: "Error creando proyecto" });
   }
 }
-
-export async function listPublicProjectsController(req, res) {
-  try {
-    const userId = req.user?.id || null;
-    console.log(`🔍 Cargando proyectos activos (userId: ${userId || "anon"})`);
-
-    // 🔹 Traemos todos los proyectos activos (sin limitar por postulaciones)
-    const projects = await prisma.project.findMany({
-      where: { isActive: true },
-      include: {
-        company: {
-          select: { nombreEmpresa: true, email: true },
-        },
-        // Si hay usuario logueado, traemos sus postulaciones
-        applications: userId
-          ? { where: { userId }, select: { status: true } }
-          : false,
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    // 🔹 Transformamos para incluir userStatus
-    const formatted = projects
-      .map((p) => ({
-        id: p.id,
-        title: p.title,
-        description: p.description,
-        skills: p.skills,
-        duration: p.duration,
-        modality: p.modality,
-        remuneration: p.remuneration,
-        location: p.location,
-        isActive: p.isActive,
-        isCompleted: p.isCompleted,
-        company: p.company?.nombreEmpresa || p.company?.email || "WorkNow",
-        userStatus: p.applications?.[0]?.status || "NONE",
-      }))
-      // 🔥 Ocultar los que están completados o HECHO/ACEPTADO
-      .filter(
-        (p) =>
-          !p.isCompleted &&
-          p.userStatus.toUpperCase() !== "HECHO" &&
-          p.userStatus.toUpperCase() !== "ACEPTADO"
-      );
-
-    console.log(
-      `✅ ${formatted.length} proyectos enviados (de ${projects.length} totales)`
-    );
-
-    res.json(formatted);
-  } catch (error) {
-    console.error("❌ Error obteniendo proyectos:", error);
-    res.status(500).json({ error: "Error obteniendo proyectos" });
-  }
-}
-
 
 // ✅ Obtener un proyecto por ID (para ApplyModal)
 export async function getProjectByIdController(req, res) {
