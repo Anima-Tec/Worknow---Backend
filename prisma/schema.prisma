@@ -1,3 +1,6 @@
+// ==========================================================
+// PRISMA CONFIG
+// ==========================================================
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,31 +10,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================================================
+// ENUMS
+// ==========================================================
 enum Role {
   USER
   COMPANY
 }
 
-model User {
-  id               Int       @id @default(autoincrement())
-  nombre           String?   
-  apellido         String?   
-  email            String    @unique
-  password         String
-  telefono         String?   
-  fechaNacimiento  DateTime? 
-  ciudad           String?   
-  profesion        String?   
-  biografia        String?   
-  experiencia      String?   
-  educacion        String?   
-  habilidades      String?   
-  role             String    @default("USER")
-  createdAt        DateTime  @default(now())
+// ==========================================================
+// MODELOS
+// ==========================================================
 
-  applications     ProjectApplication[]
-  completedProjects CompletedProject[] // ← RELACIÓN AGREGADA
+model User {
+  id              Int       @id @default(autoincrement())
+  nombre          String?
+  apellido        String?
+  email           String    @unique
+  password        String
+  telefono        String?
+  fechaNacimiento DateTime?
+  ciudad          String?
+  profesion       String?
+  biografia       String?
+  experiencia     String?
+  educacion       String?
+  habilidades     String?
+  role            String    @default("USER")
+  createdAt       DateTime  @default(now())
+
+  // 🔹 Relaciones
+  applications      ProjectApplication[]
+  jobApplications   JobApplication[] // 🆕 Relación con postulaciones a trabajos
+  completedProjects CompletedProject[]
 }
+
+// ==========================================================
 
 model Company {
   id            Int      @id @default(autoincrement())
@@ -58,11 +72,16 @@ model Company {
   linkedin      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // 🔹 Relaciones
   projects Project[]
+  jobs     Job[]
 }
 
+// ==========================================================
+
 model Project {
-  id           Int       @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   title        String
   description  String
   skills       Json?
@@ -70,16 +89,17 @@ model Project {
   modality     String?
   remuneration String?
   location     String?
-  isActive     Boolean   @default(true)
-  isCompleted  Boolean   @default(false) // ← NUEVO CAMPO AGREGADO
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isActive     Boolean  @default(true)
+  isCompleted  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  companyId Int
-  company   Company     @relation(fields: [companyId], references: [id])
-
+  companyId    Int
+  company      Company              @relation(fields: [companyId], references: [id])
   applications ProjectApplication[]
 }
+
+// ==========================================================
 
 model ProjectApplication {
   id        Int      @id @default(autoincrement())
@@ -88,45 +108,67 @@ model ProjectApplication {
   visto     Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   userId    Int
   projectId Int
-  user      User     @relation(fields: [userId], references: [id])
-  project   Project  @relation(fields: [projectId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
 
   @@unique([userId, projectId])
 }
 
+// ==========================================================
+
 model Job {
-  id             Int      @id @default(autoincrement())
-  companyName    String
-  companyWebsite String?
-  title          String
-  area           String
-  jobType        String
-  contractType   String
-  modality       String
-  location       String
-  salaryRange    String
-  description    String   
-  createdAt      DateTime  @default(now())
-  projectUrl     String?
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String
+  skills       String?
+  location     String?
+  remuneration String?
+  modality     String?
+  isActive     Boolean  @default(true)
+  isCompleted  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  companyId    Int
+  company      Company          @relation(fields: [companyId], references: [id])
+  applications JobApplication[]
 }
 
+// ==========================================================
+
+model JobApplication {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  jobId     Int
+  status    String   @default("PENDING")
+  visto     Boolean  @default(false)
+  message   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  job  Job  @relation(fields: [jobId], references: [id])
+
+  @@unique([userId, jobId])
+}
+
+// ==========================================================
+
 model CompletedProject {
-  id               Int      @id @default(autoincrement())
-  projectTitle     String
-  companyName      String
-  description      String?
-  completionDate   DateTime @default(now())
-  skills           String?   // ← NUEVO: Habilidades utilizadas
-  duration         String?   // ← NUEVO: Duración del proyecto
-  modality         String?   // ← NUEVO: Modalidad del proyecto
-  remuneration     String?   // ← NUEVO: Remuneración recibida
-  
-  userId           Int
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  applicationId    Int?     // Referencia a la postulación original
-  
-  createdAt        DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  projectTitle   String
+  companyName    String
+  description    String?
+  completionDate DateTime @default(now())
+  skills         String?
+  duration       String?
+  modality       String?
+  remuneration   String?
+  createdAt      DateTime @default(now())
+
+  userId        Int
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId Int?
 }
