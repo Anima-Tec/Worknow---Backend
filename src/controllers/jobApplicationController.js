@@ -65,7 +65,7 @@ export const getCompanyJobApplicationsController = async (req, res) => {
     if (!companyId) return res.status(401).json({ message: "No autorizado" });
 
     const applications = await prisma.jobApplication.findMany({
-      where: { job: { companyId } },
+      where: { job: { companyId: companyId } },
       include: {
         job: { select: { title: true } },
         user: { select: { nombre: true, email: true } },

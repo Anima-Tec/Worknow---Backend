@@ -70,13 +70,14 @@ export const getCompanyApplicationsController = async (req, res) => {
     console.log(`🏢 Empresa ${companyId} viendo sus postulaciones`);
 
     const applications = await prisma.projectApplication.findMany({
-      where: { project: { companyId } },
+      where: { project: { companyId: companyId } },
       include: {
         project: { select: { title: true } },
         user: { select: { nombre: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
     });
+    
 
     // 🔥 FIX: siempre extrae nombre/email del mensaje si el usuario no los tiene
     const formatted = applications.map((a) => {
