@@ -29,15 +29,6 @@ router.get("/company/me", requireAuth, requireCompany, getCompanyJobApplications
 // Empresa actualiza el estado de una postulación (aceptar / rechazar / en revisión)
 router.put("/company/:id/status", requireAuth, requireCompany, updateJobApplicationStatusController);
 
-// ===========================
-// ⚠️ RUTA CATCH-ALL (EXPRESS 5 SAFE)
-// ===========================
-// Evita errores de path-to-regexp y devuelve 404 limpias
-router.all("/:splat(*)", (req, res) => {
-  res.status(404).json({
-    error: "Ruta de postulaciones a trabajos no encontrada",
-    path: req.originalUrl,
-  });
-});
+// ✅ Eliminado el catch-all (Express 5 no permite comodines dentro de routers)
 
 export default router;

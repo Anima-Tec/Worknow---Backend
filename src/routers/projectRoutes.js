@@ -30,15 +30,6 @@ router.get("/", listPublicProjectsController);
 // Ver detalles de un proyecto específico por ID
 router.get("/:id", getProjectByIdController);
 
-// ===========================
-// ⚠️ RUTA CATCH-ALL (EXPRESS 5 SAFE)
-// ===========================
-// Evita errores "Missing parameter name at index 1: *" y devuelve 404 claras
-router.all("/:splat(*)", (req, res) => {
-  res.status(404).json({
-    error: "Ruta de proyectos no encontrada",
-    path: req.originalUrl,
-  });
-});
+// ✅ Eliminado el catch-all (Express 5 no admite comodines en routers)
 
 export default router;

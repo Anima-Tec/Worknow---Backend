@@ -49,15 +49,6 @@ router.get("/notifications/count", requireAuth, getNotificationCountController);
 // Marcar postulación como leída
 router.put("/notifications/:id/mark-read", requireAuth, markAsReadController);
 
-// ===========================
-// 🧩 RUTA CATCH-ALL (para evitar errores de path-to-regexp)
-// ===========================
-
-router.all("/:splat(*)", (req, res) => {
-  res.status(404).json({
-    error: "Ruta de aplicación no encontrada",
-    path: req.originalUrl,
-  });
-});
+// ✅ Eliminado el catch-all incompatible con Express 5
 
 export default router;

@@ -22,15 +22,6 @@ router.get("/my-projects", requireAuth, requireUser, getMyCompletedProjectsContr
 // Eliminar un proyecto completado específico
 router.delete("/:id", requireAuth, requireUser, deleteCompletedProjectController);
 
-// ===========================
-// ⚠️ RUTA CATCH-ALL (EXPRESS 5 SAFE)
-// ===========================
-// Evita errores de path-to-regexp con rutas inexistentes
-router.all("/:splat(*)", (req, res) => {
-  res.status(404).json({
-    error: "Ruta de proyectos completados no encontrada",
-    path: req.originalUrl,
-  });
-});
+// ✅ Eliminado el catch-all (Express 5 ya no permite wildcards en Routers)
 
 export default router;

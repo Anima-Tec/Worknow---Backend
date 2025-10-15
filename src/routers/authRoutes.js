@@ -31,15 +31,5 @@ router.post("/login", login);
 router.get("/profile", requireAuth, getProfile);
 router.put("/profile", requireAuth, updateProfile);
 
-// ===========================
-// ⚠️ RUTA CATCH-ALL (EXPRESS 5 SAFE)
-// ===========================
-// Evita el error "Missing parameter name at index 1: *"
-router.all("/:splat(*)", (req, res) => {
-  res.status(404).json({
-    error: "Ruta de autenticación no encontrada",
-    path: req.originalUrl,
-  });
-});
-
+// ✅ Eliminamos la ruta catch-all (ya no compatible dentro del router)
 export default router;

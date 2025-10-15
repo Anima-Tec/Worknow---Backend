@@ -42,15 +42,6 @@ router.get("/:id", getJobByIdController);
 // Ver lista pública especial (si aplica lógica distinta)
 router.get("/public/list", listPublicJobsController);
 
-// ===========================
-// ⚠️ RUTA CATCH-ALL (EXPRESS 5 SAFE)
-// ===========================
-// Evita el error "Missing parameter name at index 1: *"
-router.all("/:splat(*)", (req, res) => {
-  res.status(404).json({
-    error: "Ruta de trabajos no encontrada",
-    path: req.originalUrl,
-  });
-});
+// ✅ Eliminado el catch-all (Express 5 no permite comodines dentro de routers)
 
 export default router;
