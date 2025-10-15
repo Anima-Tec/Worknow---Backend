@@ -169,11 +169,9 @@ export const listPublicJobsController = async (req, res) => {
   }
 };
 
-// ✅ Crear un nuevo trabajo
 export async function createJobController(req, res) {
   try {
     const companyId = req.user?.id;
-
     if (!companyId) {
       console.warn("⚠️ No hay companyId en el token");
       return res.status(401).json({ error: "Empresa no autenticada" });
@@ -185,8 +183,11 @@ export async function createJobController(req, res) {
       skills,
       location,
       remuneration,
+      salary, // ⚠️ por si viene del frontend con otro nombre
       modality,
     } = req.body;
+
+    console.log("📩 Datos recibidos en el body:", req.body);
 
     const job = await prisma.job.create({
       data: {
@@ -194,11 +195,11 @@ export async function createJobController(req, res) {
         description,
         skills,
         location,
-        remuneration,
+        remuneration: remuneration || salary || null, // ✅ usa el que exista
         modality,
         isActive: true,
         isCompleted: false,
-        hasAccepted: false, // 🆕 Por defecto no tiene aceptados
+        hasAccepted: false,
         companyId,
       },
     });
@@ -211,7 +212,8 @@ export async function createJobController(req, res) {
   }
 }
 
-// ✅ Obtener un trabajo por ID
+
+// ✅ Obtener un trabajo por ID (usando los campos reales del schema)
 export async function getJobByIdController(req, res) {
   try {
     const jobId = Number(req.params.id);
@@ -219,7 +221,15 @@ export async function getJobByIdController(req, res) {
     const job = await prisma.job.findUnique({
       where: { id: jobId },
       include: {
-        company: { select: { nombreEmpresa: true, email: true } },
+        company: {
+          select: {
+            nombreEmpresa: true,
+            email: true,
+            ciudad: true,
+            sector: true,
+            sitioWeb: true, // ✅ este es el campo real del schema
+          },
+        },
       },
     });
 
@@ -227,13 +237,22 @@ export async function getJobByIdController(req, res) {
       return res.status(404).json({ error: "Trabajo no encontrado" });
     }
 
-    console.log(`📄 Trabajo obtenido: ${job.title}`);
+    // 🟣 Log de depuración
+    console.log("📄 Trabajo obtenido:", {
+      id: job.id,
+      title: job.title,
+      remuneration: job.remuneration,
+      modality: job.modality,
+      company: job.company?.nombreEmpresa,
+    });
+
     return res.json(job);
   } catch (error) {
     console.error("❌ Error obteniendo trabajo:", error);
     return res.status(500).json({ error: "Error obteniendo trabajo" });
   }
 }
+
 
 // ✅ Empresa autenticada ve solo sus trabajos
 export async function getCompanyJobsController(req, res) {
