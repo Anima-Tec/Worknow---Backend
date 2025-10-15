@@ -1,3 +1,4 @@
+// src/routers/projectRoutes.js
 import express from "express";
 import {
   createProjectController,
@@ -5,16 +6,30 @@ import {
   getCompanyProjectsController,
   getProjectByIdController,
 } from "../controllers/projectController.js";
-import { requireAuth, requireCompany, requireUser } from "../middlewares/auth.js";
+import { requireAuth, requireCompany } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// Público
+// ===========================
+// 💼 RUTAS PRIVADAS (EMPRESAS)
+// ===========================
+
+// Crear un nuevo proyecto (solo empresa autenticada)
+router.post("/", requireAuth, requireCompany, createProjectController);
+
+// Ver los proyectos creados por la empresa logueada
+router.get("/company/me", requireAuth, requireCompany, getCompanyProjectsController);
+
+// ===========================
+// 🌍 RUTAS PÚBLICAS
+// ===========================
+
+// Ver todos los proyectos disponibles públicamente
 router.get("/", listPublicProjectsController);
+
+// Ver detalles de un proyecto específico por ID
 router.get("/:id", getProjectByIdController);
 
-// Privado (empresa)
-router.post("/", requireAuth, requireCompany, createProjectController);
-router.get("/company/me", requireAuth, requireCompany, getCompanyProjectsController);
+// ✅ Eliminado el catch-all (Express 5 no admite comodines en routers)
 
 export default router;

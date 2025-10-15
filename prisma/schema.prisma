@@ -130,8 +130,12 @@ model Job {
   isActive     Boolean  @default(true)
   isCompleted  Boolean  @default(false)
   createdAt    DateTime @default(now())
+<<<<<<< HEAD
   hasAccepted Boolean @default(false)
 
+=======
+  hasAccepted Boolean   @default(false)
+>>>>>>> ed630c1b184c2d35029de650e022df858c486126
   companyId    Int
   company      Company          @relation(fields: [companyId], references: [id])
   applications JobApplication[]

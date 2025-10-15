@@ -129,39 +129,61 @@ export async function createProjectController(req, res) {
   }
 }
 
-// ✅ Obtener un proyecto por ID (para ApplyModal)
+// ✅ Obtener un proyecto por ID con todos los datos necesarios
 export async function getProjectByIdController(req, res) {
   try {
     const id = Number(req.params.id);
-    
     console.log(`🔍 Buscando proyecto por ID: ${id}`);
 
     const project = await prisma.project.findUnique({
       where: { id },
-      include: { 
-        company: { 
-          select: { 
-            id: true, 
+      include: {
+        company: {
+          select: {
+            id: true,
+            nombreEmpresa: true,
             email: true,
-            nombreEmpresa: true 
-          } 
-        } 
+            sitioWeb: true,
+            ciudad: true,
+            sector: true,
+          },
+        },
       },
     });
 
     if (!project) {
-      console.log(`❌ Proyecto ${id} no encontrado`);
       return res.status(404).json({ message: "Proyecto no encontrado" });
     }
 
-    console.log(`✅ Proyecto encontrado: ${project.id} - "${project.title}" | isCompleted: ${project.isCompleted}`);
+    // 🟣 Parsear skills
+    let skillsArray = [];
+    if (project.skills) {
+      if (typeof project.skills === "string") {
+        try {
+          skillsArray = JSON.parse(project.skills);
+        } catch {
+          skillsArray = [project.skills];
+        }
+      } else if (Array.isArray(project.skills)) {
+        skillsArray = project.skills;
+      } else if (typeof project.skills === "object") {
+        skillsArray = Object.values(project.skills);
+      }
+    }
 
-    res.json(project);
+    const formatted = {
+      ...project,
+      skills: skillsArray,
+    };
+
+    res.json(formatted);
   } catch (error) {
     console.error("❌ Error obteniendo proyecto por ID:", error);
     res.status(500).json({ error: "Error obteniendo proyecto" });
   }
 }
+
+
 
 // ✅ Obtener proyectos de la empresa logueada (solo los suyos, activos y no completados)
 export async function getCompanyProjectsController(req, res) {

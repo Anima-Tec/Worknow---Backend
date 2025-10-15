@@ -7,27 +7,41 @@ import {
   updateJobController,
   deleteJobController,
   getCompanyJobsController,
- listPublicJobsController,
+  listPublicJobsController,
 } from "../controllers/jobController.js";
 import { requireAuth, requireCompany } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// 🟣 Solo empresas autenticadas pueden crear trabajos
+// ===========================
+// 💼 RUTAS PARA EMPRESAS
+// ===========================
+
+// Crear un nuevo trabajo (solo empresa autenticada)
 router.post("/", requireAuth, requireCompany, createJobController);
 
-// 🟣 Público: ver todos los trabajos disponibles
-router.get("/", getJobsController);
-
-// 🟣 Empresa autenticada ve sus trabajos (⚠️ Debe ir antes de "/:id")
+// Ver los trabajos creados por la empresa logueada
 router.get("/company/me", requireAuth, requireCompany, getCompanyJobsController);
 
-// 🟣 Ver un trabajo por ID
+// Actualizar un trabajo (solo empresa)
+router.put("/:id", requireAuth, requireCompany, updateJobController);
+
+// Eliminar un trabajo (solo empresa)
+router.delete("/:id", requireAuth, requireCompany, deleteJobController);
+
+// ===========================
+// 🌍 RUTAS PÚBLICAS
+// ===========================
+
+// Ver todos los trabajos disponibles (público)
+router.get("/", getJobsController);
+
+// Ver un trabajo específico por su ID (público)
 router.get("/:id", getJobByIdController);
 
-// 🟣 Actualizar o eliminar (solo empresa)
-router.put("/:id", requireAuth, requireCompany, updateJobController);
-router.delete("/:id", requireAuth, requireCompany, deleteJobController);
-router.get("/", listPublicJobsController);
+// Ver lista pública especial (si aplica lógica distinta)
+router.get("/public/list", listPublicJobsController);
+
+// ✅ Eliminado el catch-all (Express 5 no permite comodines dentro de routers)
 
 export default router;
