@@ -17,7 +17,7 @@ async function main() {
       direccion: "Av. Rivera 1234",
       ciudad: "Montevideo",
       sector: "Tecnología",
-      sitioWeb: "https://worknow.com",
+      sitioWeb: "http://worknow.com",
       tamano: "11-50 empleados"
     },
   });
