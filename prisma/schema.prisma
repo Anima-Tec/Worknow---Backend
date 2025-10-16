@@ -82,22 +82,22 @@ model Company {
 // ==========================================================
 
 model Project {
-  id           Int      @id @default(autoincrement())
-  title        String
-  description  String
-  skills       Json?
-  duration     String?
-  modality     String?
-  remuneration String?
-  location     String?
-  isActive     Boolean  @default(true)
-  isCompleted  Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             Int       @id @default(autoincrement())
+  title          String
+  description    String
+  skills         Json?
+  duration       String?        // ⏱️ Tiempo estimado
+  deliveryFormat String?        // 📦 Formato de entrega
+  evaluation     String?        // 🧮 Criterios a evaluar
+  remuneration   String?        // 💰 Remuneración
+  isActive       Boolean   @default(true)
+  isCompleted    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  companyId    Int
-  company      Company              @relation(fields: [companyId], references: [id])
-  applications ProjectApplication[]
+  companyId      Int
+  company        Company    @relation(fields: [companyId], references: [id])
+  applications   ProjectApplication[]
 }
 
 // ==========================================================
