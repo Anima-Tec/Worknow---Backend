@@ -56,6 +56,7 @@ CREATE TABLE "Project" (
     "remuneration" TEXT,
     "location" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isCompleted" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     "companyId" INTEGER NOT NULL,
@@ -66,7 +67,7 @@ CREATE TABLE "Project" (
 CREATE TABLE "ProjectApplication" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "message" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "status" TEXT NOT NULL DEFAULT 'PENDIENTE',
     "visto" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
@@ -79,18 +80,49 @@ CREATE TABLE "ProjectApplication" (
 -- CreateTable
 CREATE TABLE "Job" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "companyName" TEXT NOT NULL,
-    "companyWebsite" TEXT,
     "title" TEXT NOT NULL,
-    "area" TEXT NOT NULL,
-    "jobType" TEXT NOT NULL,
-    "contractType" TEXT NOT NULL,
-    "modality" TEXT NOT NULL,
-    "location" TEXT NOT NULL,
-    "salaryRange" TEXT NOT NULL,
     "description" TEXT NOT NULL,
+    "skills" TEXT,
+    "location" TEXT,
+    "remuneration" TEXT,
+    "modality" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isCompleted" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "projectUrl" TEXT
+    "hasAccepted" BOOLEAN NOT NULL DEFAULT false,
+    "companyId" INTEGER NOT NULL,
+    CONSTRAINT "Job_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "JobApplication" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "userId" INTEGER NOT NULL,
+    "jobId" INTEGER NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDIENTE',
+    "visto" BOOLEAN NOT NULL DEFAULT false,
+    "message" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "JobApplication_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "JobApplication_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Job" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "CompletedProject" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "projectTitle" TEXT NOT NULL,
+    "companyName" TEXT NOT NULL,
+    "description" TEXT,
+    "completionDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "skills" TEXT,
+    "duration" TEXT,
+    "modality" TEXT,
+    "remuneration" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" INTEGER NOT NULL,
+    "applicationId" INTEGER,
+    CONSTRAINT "CompletedProject_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateIndex
@@ -101,3 +133,6 @@ CREATE UNIQUE INDEX "Company_email_key" ON "Company"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProjectApplication_userId_projectId_key" ON "ProjectApplication"("userId", "projectId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "JobApplication_userId_jobId_key" ON "JobApplication"("userId", "jobId");

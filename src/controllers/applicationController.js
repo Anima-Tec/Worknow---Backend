@@ -40,7 +40,7 @@ export const applyToProjectController = async (req, res) => {
       data: {
         userId,
         projectId,
-        status: "PENDING",
+        status: "PENDIENTE",
         message: name && email ? `Postulación de ${name} (${email})` : "Postulación realizada",
       },
       include: {
@@ -214,7 +214,7 @@ export const getNotificationCountController = async (req, res) => {
       where: {
         userId,
         visto: false,
-        status: { in: ["ACCEPTED", "REJECTED"] },
+        status: { in: ["ACEPTADO", "RECHAZADO"] },
       },
     });
 
@@ -320,7 +320,7 @@ export const applyToJobController = async (req, res) => {
       data: {
         userId,
         jobId,
-        status: "PENDING",
+        status: "PENDIENTE",
         message: name && email ? `Postulación de ${name} (${email})` : "Postulación realizada",
       },
       include: {

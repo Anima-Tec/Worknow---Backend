@@ -34,7 +34,7 @@ export const applyToJobController = async (req, res) => {
       data: {
         userId,
         jobId,
-        status: "PENDING",
+        status: "PENDIENTE",
         message: `Postulación de ${name} (${email})`,
       },
       include: {
@@ -107,6 +107,42 @@ export const updateJobApplicationStatusController = async (req, res) => {
         },
       },
     });
+
+    if (status === "ACEPTADO") {
+      const postulacion = await prisma.jobApplication.findUnique({
+        where: {
+          id: id
+        },
+        select: {
+          jobId: true
+        }
+      });
+
+      if (!postulacion) {
+        throw new Error("La postulación no existe");
+      }
+
+      const jobId = postulacion.jobId;
+      await prisma.job.update({
+        where: {
+          id: jobId
+        },
+        data: {
+          hasAccepted: true
+        }
+      });
+      await prisma.jobApplication.updateMany({
+        where: {
+          NOT: {
+            id: id
+          }
+        },
+        data: {
+          status: "RECHAZADO"
+        }
+    });
+    }
+
 
     console.log(
       `✅ Estado actualizado: ${status} para aplicación ${id} (${updated.job.title})`

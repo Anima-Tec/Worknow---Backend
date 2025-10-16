@@ -7,10 +7,7 @@ import authRoutes from "./src/routers/authRoutes.js";
 import jobRoutes from "./src/routers/jobRoutes.js";
 import projectRoutes from "./src/routers/projectRoutes.js";
 import applicationRoutes from "./src/routers/applicationRoutes.js";
-<<<<<<< HEAD
-=======
 import completedProjectRoutes from "./src/routers/completedProjectRoutes.js";
->>>>>>> ed630c1b184c2d35029de650e022df858c486126
 import jobApplicationRoutes from "./src/routers/jobApplicationRoutes.js";
 
 dotenv.config();
@@ -47,12 +44,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/applications", applicationRoutes);
-<<<<<<< HEAD
 app.use("/api/job-applications", jobApplicationRoutes); // Nueva ruta para job applications
-=======
 app.use("/api/completed-projects", completedProjectRoutes);
-app.use("/api/job-applications", jobApplicationRoutes);
->>>>>>> ed630c1b184c2d35029de650e022df858c486126
 
 // ===========================
 // ⚠️ CATCH-ALL GLOBAL (EXPRESS 5 COMPATIBLE)
