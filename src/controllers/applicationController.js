@@ -399,7 +399,6 @@ export const applyToJobController = async (req, res) => {
     console.error("❌ Error creando postulación de trabajo:", error);
     res.status(500).json({ message: "Error interno del servidor" });
   }
-<<<<<<< HEAD
 };
 // 🟣 Contar notificaciones no leídas de empresa
 export const getCompanyNotificationCountController = async (req, res) => {
@@ -504,6 +503,3 @@ export const markAllAsReadForUserController = async (req, res) => {
   }
 };
 
-=======
-};
->>>>>>> 15ad555d960024e16f8d410925f3cc4b1e20d0f4
