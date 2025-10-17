@@ -111,28 +111,91 @@ export const getCompanyApplicationsController = async (req, res) => {
   }
 };
 
-// 🟣 Actualizar estado (PARA EMPRESAS)
+// 🟣 Actualizar estado (PARA EMPRESAS) - VERSIÓN CORREGIDA CON LÓGICA AUTOMÁTICA
 export const updateApplicationStatusController = async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { status } = req.body;
+    const companyId = req.user?.id;
 
     console.log(`🏢 Empresa actualizando aplicación ${id} a estado: ${status}`);
 
     if (!status) return res.status(400).json({ message: "Falta el nuevo estado" });
 
-    const updated = await prisma.projectApplication.update({
+    // 1. Primero obtener la aplicación para verificar permisos y datos
+    const application = await prisma.projectApplication.findUnique({
       where: { id },
-      data: { status },
       include: {
-        user: { select: { nombre: true, email: true } },
-        project: { select: { title: true } },
-      },
+        project: {
+          select: {
+            id: true,
+            companyId: true,
+            title: true
+          }
+        }
+      }
     });
+
+    if (!application) {
+      return res.status(404).json({ message: "Postulación no encontrada" });
+    }
+
+    // 2. Verificar que la empresa es dueña del proyecto
+    if (application.project.companyId !== companyId) {
+      return res.status(403).json({ message: "No autorizado para modificar esta postulación" });
+    }
+
+    let updatedApplication;
+
+    // 3. LÓGICA PRINCIPAL: Si se acepta una, rechazar las demás automáticamente
+    if (status === "ACEPTADO") {
+      await prisma.$transaction(async (tx) => {
+        // a) Rechazar TODAS las otras postulaciones al mismo proyecto
+        await tx.projectApplication.updateMany({
+          where: {
+            projectId: application.projectId, // Mismo proyecto
+            id: { not: id }, // Excluir la actual
+            status: { not: "ACEPTADO" } // No modificar las ya aceptadas
+          },
+          data: { 
+            status: "RECHAZADO",
+            visto: false // Marcar como no leído para notificar
+          }
+        });
+
+        // b) Actualizar la postulación actual a ACEPTADO
+        updatedApplication = await tx.projectApplication.update({
+          where: { id },
+          data: { status },
+          include: {
+            user: { select: { nombre: true, email: true } },
+            project: { select: { title: true } },
+          }
+        });
+      });
+
+      console.log(`✅ Aceptada postulación ${id} y RECHAZADAS automáticamente las demás del proyecto ${application.projectId}`);
+
+    } else {
+      // Para otros estados (RECHAZADO, PENDIENTE), solo actualizar esta postulación
+      updatedApplication = await prisma.projectApplication.update({
+        where: { id },
+        data: { status },
+        include: {
+          user: { select: { nombre: true, email: true } },
+          project: { select: { title: true } },
+        }
+      });
+    }
 
     console.log(`✅ Empresa actualizó estado de aplicación ${id} a: ${status}`);
 
-    res.json({ message: "✅ Estado actualizado", application: updated });
+    res.json({ 
+      message: "✅ Estado actualizado", 
+      application: updatedApplication,
+      autoRejected: status === "ACEPTADO" // Indicar que se rechazaron otras automáticamente
+    });
+
   } catch (error) {
     console.error("❌ Error actualizando estado:", error);
     res.status(500).json({ message: "Error actualizando estado" });
@@ -296,6 +359,7 @@ export const updateMyApplicationStatusController = async (req, res) => {
     res.status(500).json({ message: "Error actualizando estado de postulación" });
   }
 };
+
 // 🟣 Usuario se postula a un trabajo
 export const applyToJobController = async (req, res) => {
   try {
@@ -335,6 +399,7 @@ export const applyToJobController = async (req, res) => {
     console.error("❌ Error creando postulación de trabajo:", error);
     res.status(500).json({ message: "Error interno del servidor" });
   }
+<<<<<<< HEAD
 };
 // 🟣 Contar notificaciones no leídas de empresa
 export const getCompanyNotificationCountController = async (req, res) => {
@@ -439,3 +504,6 @@ export const markAllAsReadForUserController = async (req, res) => {
   }
 };
 
+=======
+};
+>>>>>>> 15ad555d960024e16f8d410925f3cc4b1e20d0f4
