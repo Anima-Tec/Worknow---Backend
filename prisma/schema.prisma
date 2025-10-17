@@ -107,6 +107,7 @@ model ProjectApplication {
   message   String?
   status    String   @default("PENDIENTE")
   visto     Boolean  @default(false)
+  vistoCompany  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -121,22 +122,27 @@ model ProjectApplication {
 // ==========================================================
 
 model Job {
-  id           Int      @id @default(autoincrement())
-  title        String
-  description  String
-  skills       String?
-  location     String?
-  remuneration String?
-  modality     String?
-  isActive     Boolean  @default(true)
-  isCompleted  Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  hasAccepted  Boolean  @default(false)
+  id             Int      @id @default(autoincrement())
+  title          String
+  area           String?        // 🆕 Área / departamento
+  jobType        String?        // 🆕 Tipo de trabajo (Full-Time, Part-Time, Freelance)
+  contractType   String?        // 🆕 Tipo de contrato (Temporal, Permanente, etc.)
+  modality       String?        // 🏠 Presencial / Remoto / Híbrido
+  location       String?        // 📍 Ubicación
+  remuneration   String?        // 💰 Rango salarial
+  projectUrl     String?        // 🌐 URL del proyecto asociado
+  description    String         // 🧾 Descripción del puesto
+  skills         String?        // 🧠 Habilidades requeridas
+  isActive       Boolean  @default(true)
+  isCompleted    Boolean  @default(false)
+  hasAccepted    Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
-  companyId    Int
-  company      Company          @relation(fields: [companyId], references: [id])
-  applications JobApplication[]
+  companyId      Int
+  company        Company          @relation(fields: [companyId], references: [id])
+  applications   JobApplication[]
 }
+
 
 // ==========================================================
 
@@ -146,6 +152,7 @@ model JobApplication {
   jobId     Int
   status    String   @default("PENDIENTE")
   visto     Boolean  @default(false)
+  vistoCompany  Boolean  @default(false)
   message   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -336,4 +336,106 @@ export const applyToJobController = async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 };
+// 🟣 Contar notificaciones no leídas de empresa
+export const getCompanyNotificationCountController = async (req, res) => {
+  try {
+    const companyId = req.user?.id;
+    if (!companyId) return res.status(401).json({ message: "No autorizado" });
+
+    // ✅ Corregido: el endpoint devuelve solo el contador
+    const [projectsCount, jobsCount] = await Promise.all([
+      prisma.projectApplication.count({
+        where: {
+          project: { companyId },
+          vistoCompany: false,
+          status: { in: ["ACEPTADO", "HECHO"] },
+        },
+      }),
+      prisma.jobApplication.count({
+        where: {
+          job: { companyId },
+          vistoCompany: false,
+          status: { in: ["ACEPTADO", "HECHO"] },
+        },
+      }),
+    ]);
+
+    const total = projectsCount + jobsCount;
+
+    console.log(`🔔 Empresa ${companyId} tiene ${total} notificaciones no leídas`);
+    res.json({ count: total }); // 🔹 solo count, no lista completa
+  } catch (error) {
+    console.error("❌ Error contando notificaciones para empresa:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const markCompanyApplicationsAsReadController = async (req, res) => {
+  try {
+    const companyId = req.user?.id;
+    if (!companyId) return res.status(401).json({ message: "No autorizado" });
+
+    // 🔁 Marcar todas como leídas
+    const [updatedProjects, updatedJobs] = await Promise.all([
+      prisma.projectApplication.updateMany({
+        where: {
+          project: { companyId },
+          vistoCompany: false,
+        },
+        data: { vistoCompany: true },
+      }),
+      prisma.jobApplication.updateMany({
+        where: {
+          job: { companyId },
+          vistoCompany: false,
+        },
+        data: { vistoCompany: true },
+      }),
+    ]);
+
+    console.log(`✅ Empresa ${companyId} marcó ${updatedProjects.count + updatedJobs.count} como leídas`);
+
+    res.json({
+      message: "✅ Postulaciones marcadas como vistas",
+      updated: updatedProjects.count + updatedJobs.count,
+    });
+  } catch (error) {
+    console.error("❌ Error marcando postulaciones de empresa como vistas:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+// 🟣 Marcar TODAS las notificaciones del usuario como leídas
+export const markAllAsReadForUserController = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
+
+    const [updatedProjects, updatedJobs] = await Promise.all([
+      prisma.projectApplication.updateMany({
+        where: {
+          userId,
+          visto: false,
+          status: { in: ["ACEPTADO", "RECHAZADO"] },
+        },
+        data: { visto: true },
+      }),
+      prisma.jobApplication.updateMany({
+        where: {
+          userId,
+          visto: false,
+          status: { in: ["ACEPTADO", "RECHAZADO"] },
+        },
+        data: { visto: true },
+      }),
+    ]);
+
+    const total = updatedProjects.count + updatedJobs.count;
+
+    console.log(`✅ Usuario ${userId} marcó ${total} notificaciones como leídas`);
+    res.json({ message: "✅ Notificaciones marcadas como leídas", updated: total });
+  } catch (error) {
+    console.error("❌ Error marcando notificaciones de usuario como leídas:", error);
+    res.status(500).json({ message: "Error marcando notificaciones" });
+  }
+};
 
