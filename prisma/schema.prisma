@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -38,6 +38,9 @@ model User {
   habilidades     String?
   role            String    @default("USER")
   createdAt       DateTime  @default(now())
+  
+      // 🆕 Campo JSON para formación académica
+      formacionAcademica Json?  // Objeto JSON con institucion, titulo, periodo, descripcion
 
   // 🔹 Relaciones
   applications      ProjectApplication[]

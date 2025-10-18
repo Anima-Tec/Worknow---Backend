@@ -192,23 +192,39 @@ export const getProfile = async (req, res) => {
     const { id, role } = req.user; // viene del middleware requireAuth
 
     if (role === "USER") {
-      const user = await prisma.user.findUnique({ where: { id } });
+      const user = await prisma.user.findUnique({ 
+        where: { id },
+        select: {
+          id: true,
+          nombre: true,
+          apellido: true,
+          email: true,
+          telefono: true,
+          fechaNacimiento: true,
+          ciudad: true,
+          profesion: true,
+          biografia: true,
+          experiencia: true,
+          educacion: true,
+          habilidades: true,
+          formacionAcademica: true,
+          role: true,
+          createdAt: true
+        }
+      });
      
       if (!user) {
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
 
-      // ✅ CRÍTICO: NO devolver el password
-      const { password, ...userWithoutPassword } = user;
-     
       // ✅ Convertir fechaNacimiento a formato YYYY-MM-DD para el input date
-      if (userWithoutPassword.fechaNacimiento) {
-        userWithoutPassword.fechaNacimiento = userWithoutPassword.fechaNacimiento
+      if (user.fechaNacimiento) {
+        user.fechaNacimiento = user.fechaNacimiento
           .toISOString()
           .split('T')[0];
       }
 
-      return res.json(userWithoutPassword);
+      return res.json(user);
     }
 
     if (role === "COMPANY") {
@@ -236,49 +252,105 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { id, role } = req.user;
-    const data = req.body;
-
-    // ✅ SEGURIDAD: Eliminar campos que NO deben actualizarse directamente
-    delete data.password;
-    delete data.email;
-    delete data.role;
-    delete data.id;
-    delete data.createdAt;
-
+    
     if (role === "USER") {
-      // ✅ Convertir fechaNacimiento si viene en el body
-      if (data.fechaNacimiento) {
-        const fecha = new Date(data.fechaNacimiento);
-        if (isNaN(fecha.getTime())) {
-          return res.status(400).json({
-            message: "Fecha de nacimiento inválida"
-          });
+      // Procesar datos del formulario
+      const {
+        nombre,
+        apellido,
+        telefono,
+        fechaNacimiento,
+        ciudad,
+        profesion,
+        biografia,
+        experiencia,
+        educacion,
+        habilidades,
+        formacionAcademica
+      } = req.body;
+
+      // Preparar datos para actualización
+      const updateData = {};
+      
+      if (nombre !== undefined) updateData.nombre = nombre;
+      if (apellido !== undefined) updateData.apellido = apellido;
+      if (telefono !== undefined) updateData.telefono = telefono;
+      if (ciudad !== undefined) updateData.ciudad = ciudad;
+      if (profesion !== undefined) updateData.profesion = profesion;
+      if (biografia !== undefined) updateData.biografia = biografia;
+      if (experiencia !== undefined) updateData.experiencia = experiencia;
+      if (educacion !== undefined) updateData.educacion = educacion;
+      if (habilidades !== undefined) updateData.habilidades = habilidades;
+
+      // Manejar fechaNacimiento
+      if (fechaNacimiento !== undefined) {
+        if (fechaNacimiento === null || fechaNacimiento === '') {
+          updateData.fechaNacimiento = null;
+        } else {
+          const fecha = new Date(fechaNacimiento);
+          if (isNaN(fecha.getTime())) {
+            return res.status(400).json({ message: "Fecha de nacimiento inválida" });
+          }
+          updateData.fechaNacimiento = fecha;
         }
-        data.fechaNacimiento = fecha;
       }
+
+      // Manejar formación académica (JSON)
+      if (formacionAcademica !== undefined) {
+        try {
+          const formacionData = typeof formacionAcademica === 'string' 
+            ? JSON.parse(formacionAcademica) 
+            : formacionAcademica;
+          updateData.formacionAcademica = formacionData;
+        } catch (error) {
+          return res.status(400).json({ message: "Formación académica inválida" });
+        }
+      }
+
 
       const updated = await prisma.user.update({
         where: { id },
-        data
+        data: updateData,
+        select: {
+          id: true,
+          nombre: true,
+          apellido: true,
+          email: true,
+          telefono: true,
+          fechaNacimiento: true,
+          ciudad: true,
+          profesion: true,
+          biografia: true,
+          experiencia: true,
+          educacion: true,
+          habilidades: true,
+          formacionAcademica: true,
+          role: true,
+          createdAt: true
+        }
       });
 
-      // No devolver el password
-      const { password, ...updatedWithoutPassword } = updated;
-
       // Convertir fecha para el frontend
-      if (updatedWithoutPassword.fechaNacimiento) {
-        updatedWithoutPassword.fechaNacimiento = updatedWithoutPassword.fechaNacimiento
-          .toISOString()
-          .split('T')[0];
+      if (updated.fechaNacimiento) {
+        updated.fechaNacimiento = updated.fechaNacimiento.toISOString().split('T')[0];
       }
 
       return res.json({
         message: "Perfil de usuario actualizado",
-        updated: updatedWithoutPassword
+        updated: updated
       });
     }
 
     if (role === "COMPANY") {
+      const data = req.body;
+      
+      // ✅ SEGURIDAD: Eliminar campos que NO deben actualizarse directamente
+      delete data.password;
+      delete data.email;
+      delete data.role;
+      delete data.id;
+      delete data.createdAt;
+
       const updated = await prisma.company.update({
         where: { id },
         data
