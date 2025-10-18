@@ -131,14 +131,7 @@ export const registerCompany = async (req, res) => {
       sector,
       sitioWeb,
       tamano,
-      fundada,
-      empleados,
-      ubicaciones,
       descripcion,
-      mision,
-      vision,
-      twitter,
-      facebook,
       logoUrl
     } = req.body;
 
@@ -165,14 +158,7 @@ export const registerCompany = async (req, res) => {
         sector: sector || null,
         sitioWeb: sitioWeb || null,
         tamano: tamano || null,
-        fundada: fundada ? Number(fundada) : null,
-        empleados: empleados ? Number(empleados) : null,
-        ubicaciones: ubicaciones || null,
         descripcion: descripcion || null,
-        mision: mision || null,
-        vision: vision || null,
-        twitter: twitter || null,
-        facebook: facebook || null,
         logoUrl: logoUrl || null,
       },
     });
