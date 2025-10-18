@@ -88,44 +88,50 @@ export const validateUruguayanPhone = (req, res, next) => {
   next();
 };
 
-// Validar URL (opcional)
-export const validateURL = (fieldName) => {
-  return (req, res, next) => {
-    const value = req.body[fieldName];
-    
-    if (value !== undefined && value !== null && value !== '') {
+// Validar campos de empresa (opcional)
+export const validateCompanyFields = (req, res, next) => {
+  const { sitioWeb, twitter, facebook, fundada, empleados } = req.body;
+  
+  // Validar URLs si están presentes y no están vacías
+  const urlsToValidate = [
+    { field: 'sitioWeb', value: sitioWeb },
+    { field: 'twitter', value: twitter },
+    { field: 'facebook', value: facebook }
+  ];
+  
+  for (const { field, value } of urlsToValidate) {
+    if (value && value.trim() !== '') {
       try {
         new URL(value);
       } catch {
         return res.status(400).json({
           success: false,
           error: "Datos inválidos",
-          details: `${fieldName} debe ser una URL válida`
+          details: `${field} debe ser una URL válida`
         });
       }
     }
-    
-    next();
-  };
-};
-
-// Validar número (opcional)
-export const validateNumber = (fieldName) => {
-  return (req, res, next) => {
-    const value = req.body[fieldName];
-    
+  }
+  
+  // Validar números si están presentes
+  const numbersToValidate = [
+    { field: 'fundada', value: fundada },
+    { field: 'empleados', value: empleados }
+  ];
+  
+  for (const { field, value } of numbersToValidate) {
     if (value !== undefined && value !== null && value !== '') {
       if (isNaN(Number(value)) || Number(value) < 0) {
         return res.status(400).json({
           success: false,
           error: "Datos inválidos",
-          details: `${fieldName} debe ser un número válido mayor o igual a 0`
+          details: `${field} debe ser un número válido mayor o igual a 0`
         });
       }
     }
-    
-    next();
-  };
+  }
+  
+  next();
 };
 
 // Sanitizar entrada de texto
