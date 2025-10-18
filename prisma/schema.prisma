@@ -1,0 +1,125 @@
+// ==========================================================
+// PRISMA CONFIG
+// ==========================================================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ==========================================================
+// ENUMS
+// ==========================================================
+enum Role {
+  USER
+  COMPANY
+}
+
+// ==========================================================
+// MODELOS
+// ==========================================================
+
+model User {
+  id              Int       @id @default(autoincrement())
+  nombre          String?
+  apellido        String?
+  email           String    @unique
+  password        String
+  telefono        String?
+  fechaNacimiento DateTime?
+  ciudad          String?
+  profesion       String?
+  biografia       String?
+  experiencia     String?
+  educacion       String?
+  habilidades     String?
+  role            Role      @default(USER)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Company {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String
+  nombreEmpresa String?
+  rut           String?
+  telefono      String?
+  direccion     String?
+  ciudad        String?
+  sector        String?
+  sitioWeb      String?
+  tamano        String?
+  role          Role      @default(COMPANY)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("companies")
+}
+
+model Job {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("jobs")
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("projects")
+}
+
+model Application {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  projectId Int
+  user      User     @relation(fields: [userId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, projectId])
+  @@map("applications")
+}
+
+model JobApplication {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  jobId     Int
+  user      User     @relation(fields: [userId], references: [id])
+  job       Job      @relation(fields: [jobId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
+  @@map("job_applications")
+}
+
+model CompletedProject {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  projectTitle String
+  companyName String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@map("completed_projects")
+}
