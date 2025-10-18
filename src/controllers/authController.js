@@ -55,8 +55,10 @@ export const login = async (req, res) => {
       });
     }
   } catch (err) {
-    console.error("❌ Error en login:", err);
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.status(500).json({ 
+      success: false,
+      error: "Error interno del servidor" 
+    });
   }
 };
 
@@ -202,8 +204,10 @@ export const registerCompany = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("❌ Error en registerCompany:", error);
-    res.status(500).json({ message: "Error interno del servidor", error: error.message});
+    res.status(500).json({ 
+      success: false,
+      error: "Error interno del servidor" 
+    });
   }
 };
 
@@ -281,8 +285,10 @@ export const getProfile = async (req, res) => {
 
     return res.status(400).json({ message: "Rol no válido" });
   } catch (error) {
-    console.error("❌ Error obteniendo perfil:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.status(500).json({ 
+      success: false,
+      error: "Error interno del servidor" 
+    });
   }
 };
 
@@ -421,10 +427,9 @@ export const updateProfile = async (req, res) => {
 
     return res.status(400).json({ message: "Rol no válido" });
   } catch (error) {
-    console.error("❌ Error actualizando perfil:", error);
     res.status(500).json({
-      message: "Error interno del servidor",
-      error: error.message
+      success: false,
+      error: "Error interno del servidor"
     });
   }
 };
