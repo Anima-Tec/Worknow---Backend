@@ -78,13 +78,54 @@ export const validateUruguayanPhone = (req, res, next) => {
     
     if (!phoneRegex.test(telefono)) {
       return res.status(400).json({
-        error: "Teléfono inválido",
-        message: "El teléfono debe tener el formato +598XXXXXXXX (8 dígitos después del código de país)"
+        success: false,
+        error: "Datos inválidos",
+        details: "El teléfono debe tener el formato +598XXXXXXXX (8 dígitos después del código de país)"
       });
     }
   }
   
   next();
+};
+
+// Validar URL (opcional)
+export const validateURL = (fieldName) => {
+  return (req, res, next) => {
+    const value = req.body[fieldName];
+    
+    if (value !== undefined && value !== null && value !== '') {
+      try {
+        new URL(value);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: `${fieldName} debe ser una URL válida`
+        });
+      }
+    }
+    
+    next();
+  };
+};
+
+// Validar número (opcional)
+export const validateNumber = (fieldName) => {
+  return (req, res, next) => {
+    const value = req.body[fieldName];
+    
+    if (value !== undefined && value !== null && value !== '') {
+      if (isNaN(Number(value)) || Number(value) < 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Datos inválidos",
+          details: `${fieldName} debe ser un número válido mayor o igual a 0`
+        });
+      }
+    }
+    
+    next();
+  };
 };
 
 // Sanitizar entrada de texto

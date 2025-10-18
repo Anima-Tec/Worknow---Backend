@@ -13,8 +13,8 @@ export const requireAuth = (req, res, next) => {
 
     if (scheme !== "Bearer" || !token) {
       return res.status(401).json({ 
-        error: "Token requerido o inválido",
-        message: "Debe proporcionar un token Bearer válido"
+        success: false,
+        error: "Token inválido o expirado"
       });
     }
 
@@ -23,8 +23,8 @@ export const requireAuth = (req, res, next) => {
     // Validar que el payload tenga la estructura esperada
     if (!payload.id || !payload.email || !payload.role) {
       return res.status(401).json({ 
-        error: "Token malformado",
-        message: "El token no contiene la información necesaria"
+        success: false,
+        error: "Token inválido o expirado"
       });
     }
     
@@ -35,21 +35,21 @@ export const requireAuth = (req, res, next) => {
     
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ 
-        error: "Token expirado",
-        message: "Su sesión ha expirado, por favor inicie sesión nuevamente"
+        success: false,
+        error: "Token inválido o expirado"
       });
     }
     
     if (err.name === 'JsonWebTokenError') {
       return res.status(401).json({ 
-        error: "Token inválido",
-        message: "El token proporcionado no es válido"
+        success: false,
+        error: "Token inválido o expirado"
       });
     }
     
     return res.status(401).json({ 
-      error: "Error de autenticación",
-      message: "No se pudo verificar la autenticación"
+      success: false,
+      error: "Token inválido o expirado"
     });
   }
 };

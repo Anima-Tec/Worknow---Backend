@@ -121,7 +121,7 @@ export const registerUser = async (req, res) => {
 export const registerCompany = async (req, res) => {
   try {
     const { 
-       email,
+      email,
       password,
       nombreEmpresa,
       rut,
@@ -131,7 +131,14 @@ export const registerCompany = async (req, res) => {
       sector,
       sitioWeb,
       tamano,
+      fundada,
+      empleados,
+      ubicaciones,
       descripcion,
+      mision,
+      vision,
+      twitter,
+      facebook,
       logoUrl
     } = req.body;
 
@@ -146,7 +153,7 @@ export const registerCompany = async (req, res) => {
 
     // Crear nueva empresa
     const newCompany = await prisma.company.create({
-        data: {
+      data: {
         email,
         password: hashedPassword,
         role: "COMPANY",
@@ -158,7 +165,14 @@ export const registerCompany = async (req, res) => {
         sector: sector || null,
         sitioWeb: sitioWeb || null,
         tamano: tamano || null,
+        fundada: fundada ? Number(fundada) : null,
+        empleados: empleados ? Number(empleados) : null,
+        ubicaciones: ubicaciones || null,
         descripcion: descripcion || null,
+        mision: mision || null,
+        vision: vision || null,
+        twitter: twitter || null,
+        facebook: facebook || null,
         logoUrl: logoUrl || null,
       },
     });
@@ -230,12 +244,18 @@ export const getProfile = async (req, res) => {
       const company = await prisma.company.findUnique({ where: { id } });
      
       if (!company) {
-        return res.status(404).json({ message: "Empresa no encontrada" });
+        return res.status(404).json({ 
+          success: false,
+          error: "Empresa no encontrada" 
+        });
       }
 
       // No devolver el password
       const { password, ...companyWithoutPassword } = company;
-      return res.json(companyWithoutPassword);
+      return res.json({
+        success: true,
+        data: companyWithoutPassword
+      });
     }
 
     return res.status(400).json({ message: "Rol no válido" });
@@ -328,25 +348,58 @@ export const updateProfile = async (req, res) => {
     }
 
     if (role === "COMPANY") {
-      const data = req.body;
+      const {
+        nombreEmpresa,
+        rut,
+        telefono,
+        direccion,
+        ciudad,
+        sector,
+        sitioWeb,
+        tamano,
+        fundada,
+        empleados,
+        ubicaciones,
+        descripcion,
+        mision,
+        vision,
+        twitter,
+        facebook,
+        logoUrl
+      } = req.body;
       
-      // ✅ SEGURIDAD: Eliminar campos que NO deben actualizarse directamente
-      delete data.password;
-      delete data.email;
-      delete data.role;
-      delete data.id;
-      delete data.createdAt;
+      // Preparar datos para actualización
+      const updateData = {};
+      
+      if (nombreEmpresa !== undefined) updateData.nombreEmpresa = nombreEmpresa;
+      if (rut !== undefined) updateData.rut = rut;
+      if (telefono !== undefined) updateData.telefono = telefono;
+      if (direccion !== undefined) updateData.direccion = direccion;
+      if (ciudad !== undefined) updateData.ciudad = ciudad;
+      if (sector !== undefined) updateData.sector = sector;
+      if (sitioWeb !== undefined) updateData.sitioWeb = sitioWeb;
+      if (tamano !== undefined) updateData.tamano = tamano;
+      if (fundada !== undefined) updateData.fundada = fundada ? Number(fundada) : null;
+      if (empleados !== undefined) updateData.empleados = empleados ? Number(empleados) : null;
+      if (ubicaciones !== undefined) updateData.ubicaciones = ubicaciones;
+      if (descripcion !== undefined) updateData.descripcion = descripcion;
+      if (mision !== undefined) updateData.mision = mision;
+      if (vision !== undefined) updateData.vision = vision;
+      if (twitter !== undefined) updateData.twitter = twitter;
+      if (facebook !== undefined) updateData.facebook = facebook;
+      if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
 
       const updated = await prisma.company.update({
         where: { id },
-        data
+        data: updateData
       });
 
       // No devolver el password
       const { password, ...updatedWithoutPassword } = updated;
 
       return res.json({
-        message: "Perfil de empresa actualizado",
+        success: true,
+        message: "Perfil actualizado correctamente",
         updated: updatedWithoutPassword
       });
     }

@@ -7,7 +7,7 @@ import {
   updateProfile,
 } from "../controllers/authController.js";
 import { requireAuth } from "../middlewares/auth.js";
-import { validateRequired, validateEmail, validatePassword, validateUruguayanPhone, sanitizeInput } from "../middlewares/validation.js";
+import { validateRequired, validateEmail, validatePassword, validateUruguayanPhone, validateURL, validateNumber, sanitizeInput } from "../middlewares/validation.js";
 
 const router = Router();
 
@@ -32,6 +32,11 @@ router.post("/register/company",
   validateEmail,
   validatePassword,
   validateUruguayanPhone,
+  validateURL("sitioWeb"),
+  validateURL("twitter"),
+  validateURL("facebook"),
+  validateNumber("fundada"),
+  validateNumber("empleados"),
   registerCompany
 );
 
@@ -53,6 +58,11 @@ router.put("/profile",
   requireAuth,
   sanitizeInput,
   validateUruguayanPhone,
+  validateURL("sitioWeb"),
+  validateURL("twitter"),
+  validateURL("facebook"),
+  validateNumber("fundada"),
+  validateNumber("empleados"),
   updateProfile
 );
 
