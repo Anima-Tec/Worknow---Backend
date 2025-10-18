@@ -31,11 +31,6 @@ router.post("/register/company",
   validateRequired(["email", "password", "nombreEmpresa"]),
   validateEmail,
   validatePassword,
-  validateUruguayanPhone,
-  validateRUT,
-  validateUruguayCity,
-  validateCompanySize,
-  validateWebsite,
   registerCompany
 );
 
@@ -56,11 +51,6 @@ router.get("/profile", requireAuth, getProfile);
 router.put("/profile", 
   requireAuth,
   sanitizeInput,
-  validateUruguayanPhone,
-  validateRUT,
-  validateUruguayCity,
-  validateCompanySize,
-  validateWebsite,
   updateProfile
 );
 
