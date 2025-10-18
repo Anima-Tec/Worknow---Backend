@@ -43,7 +43,7 @@ export const login = async (req, res) => {
           id: account.id, 
           nombreEmpresa: account.nombreEmpresa,
           email: account.email, 
-          tipoUsuario: account.role 
+          role: account.role 
         },
       });
     } else {
@@ -120,7 +120,10 @@ export const registerUser = async (req, res) => {
 
     res.status(201).json({
       message: "✅ Usuario registrado con éxito",
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        role: userWithoutPassword.role
+      },
     });
   } catch (error) {
     console.error("❌ Error en registerUser:", error);
@@ -200,7 +203,7 @@ export const registerCompany = async (req, res) => {
         id: companyWithoutPassword.id,
         nombreEmpresa: companyWithoutPassword.nombreEmpresa,
         email: companyWithoutPassword.email,
-        tipoUsuario: companyWithoutPassword.role
+        role: companyWithoutPassword.role
       }
     });
   } catch (error) {
@@ -278,7 +281,7 @@ export const getProfile = async (req, res) => {
           sector: companyWithoutPassword.sector,
           sitioWeb: companyWithoutPassword.sitioWeb,
           tamano: companyWithoutPassword.tamano,
-          tipoUsuario: companyWithoutPassword.role
+          role: companyWithoutPassword.role
         }
       });
     }
@@ -420,7 +423,7 @@ export const updateProfile = async (req, res) => {
           sector: updatedWithoutPassword.sector,
           sitioWeb: updatedWithoutPassword.sitioWeb,
           tamano: updatedWithoutPassword.tamano,
-          tipoUsuario: updatedWithoutPassword.role
+          role: updatedWithoutPassword.role
         }
       });
     }
