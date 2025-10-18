@@ -68,15 +68,15 @@ export const validatePassword = (req, res, next) => {
   next();
 };
 
-// Validar teléfono uruguayo (+598XXXXXXXX)
+// Validar teléfono uruguayo (+598XXXXXXXX) - Solo si está presente
 export const validateUruguayanPhone = (req, res, next) => {
   const { telefono } = req.body;
   
-  if (telefono !== undefined && telefono !== null && telefono !== '') {
+  if (telefono && telefono.trim() !== '') {
     // Expresión regular para teléfono uruguayo: +598 seguido de exactamente 8 dígitos
     const phoneRegex = /^\+598\d{8}$/;
     
-    if (!phoneRegex.test(telefono)) {
+    if (!phoneRegex.test(telefono.trim())) {
       return res.status(400).json({
         success: false,
         error: "Datos inválidos",
