@@ -1,5 +1,0 @@
--- AlterTable
-ALTER TABLE "Job" ADD COLUMN "area" TEXT;
-ALTER TABLE "Job" ADD COLUMN "contractType" TEXT;
-ALTER TABLE "Job" ADD COLUMN "jobType" TEXT;
-ALTER TABLE "Job" ADD COLUMN "projectUrl" TEXT;
