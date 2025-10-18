@@ -25,14 +25,12 @@ app.use(
     origin: [
       "https://worknow.anima.edu.uy", // Frontend producción
       "http://localhost:5173",        // Frontend desarrollo
-      "http://localhost:5174",       // Frontend desarrollo alternativo
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 
 // ===========================
 // 🚀 RUTAS PRINCIPALES
