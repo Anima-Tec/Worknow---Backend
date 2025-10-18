@@ -7,7 +7,7 @@ import {
   updateProfile,
 } from "../controllers/authController.js";
 import { requireAuth } from "../middlewares/auth.js";
-import { validateRequired, validateEmail, validatePassword, validateUruguayanPhone, validateCompanyFields, sanitizeInput } from "../middlewares/validation.js";
+import { validateRequired, validateEmail, validatePassword, validateUruguayanPhone, validateRUT, validateUruguayCity, validateCompanySize, validateWebsite, sanitizeInput } from "../middlewares/validation.js";
 
 const router = Router();
 
@@ -31,6 +31,11 @@ router.post("/register/company",
   validateRequired(["email", "password", "nombreEmpresa"]),
   validateEmail,
   validatePassword,
+  validateUruguayanPhone,
+  validateRUT,
+  validateUruguayCity,
+  validateCompanySize,
+  validateWebsite,
   registerCompany
 );
 
@@ -51,6 +56,11 @@ router.get("/profile", requireAuth, getProfile);
 router.put("/profile", 
   requireAuth,
   sanitizeInput,
+  validateUruguayanPhone,
+  validateRUT,
+  validateUruguayCity,
+  validateCompanySize,
+  validateWebsite,
   updateProfile
 );
 

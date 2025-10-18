@@ -33,10 +33,27 @@ export const login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    return res.json({
-      token,
-      user: { id: account.id, email: account.email, role: account.role },
-    });
+    // Determinar el tipo de respuesta según el rol
+    if (account.role === "COMPANY") {
+      return res.json({
+        success: true,
+        message: "Login exitoso",
+        token,
+        user: { 
+          id: account.id, 
+          nombreEmpresa: account.nombreEmpresa,
+          email: account.email, 
+          tipoUsuario: account.role 
+        },
+      });
+    } else {
+      return res.json({
+        success: true,
+        message: "Login exitoso",
+        token,
+        user: { id: account.id, email: account.email, role: account.role },
+      });
+    }
   } catch (err) {
     console.error("❌ Error en login:", err);
     res.status(500).json({ message: "Error interno del servidor" });
@@ -131,15 +148,17 @@ export const registerCompany = async (req, res) => {
       sector,
       sitioWeb,
       tamano,
-      descripcion,
-      logoUrl
+      tipoUsuario
     } = req.body;
 
 
     // Verificar si ya existe
     const existing = await prisma.company.findUnique({ where: { email } });
     if (existing)
-      return res.status(400).json({ message: "La empresa ya existe" });
+      return res.status(409).json({ 
+        success: false,
+        error: "Email ya registrado" 
+      });
 
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -158,8 +177,6 @@ export const registerCompany = async (req, res) => {
         sector: sector || null,
         sitioWeb: sitioWeb || null,
         tamano: tamano || null,
-        descripcion: descripcion || null,
-        logoUrl: logoUrl || null,
       },
     });
 
@@ -174,9 +191,15 @@ export const registerCompany = async (req, res) => {
     const { password: _, ...companyWithoutPassword } = newCompany;
 
     return res.status(201).json({
-      message: "Empresa registrada correctamente",
+      success: true,
+      message: "Empresa registrada exitosamente",
       token,
-      company: companyWithoutPassword,
+      user: {
+        id: companyWithoutPassword.id,
+        nombreEmpresa: companyWithoutPassword.nombreEmpresa,
+        email: companyWithoutPassword.email,
+        tipoUsuario: companyWithoutPassword.role
+      }
     });
   } catch (error) {
     console.error("❌ Error en registerCompany:", error);
@@ -240,7 +263,19 @@ export const getProfile = async (req, res) => {
       const { password, ...companyWithoutPassword } = company;
       return res.json({
         success: true,
-        data: companyWithoutPassword
+        data: {
+          id: companyWithoutPassword.id,
+          nombreEmpresa: companyWithoutPassword.nombreEmpresa,
+          rut: companyWithoutPassword.rut,
+          email: companyWithoutPassword.email,
+          telefono: companyWithoutPassword.telefono,
+          direccion: companyWithoutPassword.direccion,
+          ciudad: companyWithoutPassword.ciudad,
+          sector: companyWithoutPassword.sector,
+          sitioWeb: companyWithoutPassword.sitioWeb,
+          tamano: companyWithoutPassword.tamano,
+          tipoUsuario: companyWithoutPassword.role
+        }
       });
     }
 
@@ -342,16 +377,7 @@ export const updateProfile = async (req, res) => {
         ciudad,
         sector,
         sitioWeb,
-        tamano,
-        fundada,
-        empleados,
-        ubicaciones,
-        descripcion,
-        mision,
-        vision,
-        twitter,
-        facebook,
-        logoUrl
+        tamano
       } = req.body;
       
       // Preparar datos para actualización
@@ -365,15 +391,6 @@ export const updateProfile = async (req, res) => {
       if (sector !== undefined) updateData.sector = sector;
       if (sitioWeb !== undefined) updateData.sitioWeb = sitioWeb;
       if (tamano !== undefined) updateData.tamano = tamano;
-      if (fundada !== undefined) updateData.fundada = fundada ? Number(fundada) : null;
-      if (empleados !== undefined) updateData.empleados = empleados ? Number(empleados) : null;
-      if (ubicaciones !== undefined) updateData.ubicaciones = ubicaciones;
-      if (descripcion !== undefined) updateData.descripcion = descripcion;
-      if (mision !== undefined) updateData.mision = mision;
-      if (vision !== undefined) updateData.vision = vision;
-      if (twitter !== undefined) updateData.twitter = twitter;
-      if (facebook !== undefined) updateData.facebook = facebook;
-      if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
 
       const updated = await prisma.company.update({
         where: { id },
@@ -385,8 +402,20 @@ export const updateProfile = async (req, res) => {
 
       return res.json({
         success: true,
-        message: "Perfil actualizado correctamente",
-        updated: updatedWithoutPassword
+        message: "Perfil actualizado exitosamente",
+        data: {
+          id: updatedWithoutPassword.id,
+          nombreEmpresa: updatedWithoutPassword.nombreEmpresa,
+          rut: updatedWithoutPassword.rut,
+          email: updatedWithoutPassword.email,
+          telefono: updatedWithoutPassword.telefono,
+          direccion: updatedWithoutPassword.direccion,
+          ciudad: updatedWithoutPassword.ciudad,
+          sector: updatedWithoutPassword.sector,
+          sitioWeb: updatedWithoutPassword.sitioWeb,
+          tamano: updatedWithoutPassword.tamano,
+          tipoUsuario: updatedWithoutPassword.role
+        }
       });
     }
 

@@ -88,46 +88,82 @@ export const validateUruguayanPhone = (req, res, next) => {
   next();
 };
 
-// Validar campos de empresa (opcional)
-export const validateCompanyFields = (req, res, next) => {
-  const { sitioWeb, twitter, facebook, fundada, empleados } = req.body;
+// Validar RUT uruguayo
+export const validateRUT = (req, res, next) => {
+  const { rut } = req.body;
   
-  // Validar URLs si están presentes y no están vacías
-  const urlsToValidate = [
-    { field: 'sitioWeb', value: sitioWeb },
-    { field: 'twitter', value: twitter },
-    { field: 'facebook', value: facebook }
-  ];
-  
-  for (const { field, value } of urlsToValidate) {
-    if (value && value.trim() !== '') {
-      try {
-        new URL(value);
-      } catch {
-        return res.status(400).json({
-          success: false,
-          error: "Datos inválidos",
-          details: `${field} debe ser una URL válida`
-        });
-      }
+  if (rut && rut.trim() !== '') {
+    // Formato uruguayo: 12.345.678-9
+    const rutRegex = /^\d{1,2}\.\d{3}\.\d{3}-\d{1}$/;
+    
+    if (!rutRegex.test(rut.trim())) {
+      return res.status(400).json({
+        success: false,
+        error: "Datos inválidos",
+        details: "El RUT debe tener el formato uruguayo (ej: 12.345.678-9)"
+      });
     }
   }
   
-  // Validar números si están presentes
-  const numbersToValidate = [
-    { field: 'fundada', value: fundada },
-    { field: 'empleados', value: empleados }
-  ];
+  next();
+};
+
+// Validar ciudad (departamentos de Uruguay)
+export const validateUruguayCity = (req, res, next) => {
+  const { ciudad } = req.body;
   
-  for (const { field, value } of numbersToValidate) {
-    if (value !== undefined && value !== null && value !== '') {
-      if (isNaN(Number(value)) || Number(value) < 0) {
-        return res.status(400).json({
-          success: false,
-          error: "Datos inválidos",
-          details: `${field} debe ser un número válido mayor o igual a 0`
-        });
-      }
+  if (ciudad && ciudad.trim() !== '') {
+    const departamentosUruguay = [
+      "Artigas", "Canelones", "Cerro Largo", "Colonia", "Durazno",
+      "Flores", "Florida", "Lavalleja", "Maldonado", "Montevideo",
+      "Paysandú", "Río Negro", "Rivera", "Rocha", "Salto",
+      "San José", "Soriano", "Tacuarembó", "Treinta y Tres"
+    ];
+    
+    if (!departamentosUruguay.includes(ciudad.trim())) {
+      return res.status(400).json({
+        success: false,
+        error: "Datos inválidos",
+        details: "La ciudad debe ser uno de los departamentos de Uruguay"
+      });
+    }
+  }
+  
+  next();
+};
+
+// Validar tamaño de empresa
+export const validateCompanySize = (req, res, next) => {
+  const { tamano } = req.body;
+  
+  if (tamano && tamano.trim() !== '') {
+    const tamanosValidos = ["1-10", "11-50", "51-200", "201-500", "500+"];
+    
+    if (!tamanosValidos.includes(tamano.trim())) {
+      return res.status(400).json({
+        success: false,
+        error: "Datos inválidos",
+        details: "El tamaño debe ser: 1-10, 11-50, 51-200, 201-500, o 500+"
+      });
+    }
+  }
+  
+  next();
+};
+
+// Validar sitio web (opcional)
+export const validateWebsite = (req, res, next) => {
+  const { sitioWeb } = req.body;
+  
+  if (sitioWeb && sitioWeb.trim() !== '') {
+    try {
+      new URL(sitioWeb);
+    } catch {
+      return res.status(400).json({
+        success: false,
+        error: "Datos inválidos",
+        details: "El sitio web debe ser una URL válida"
+      });
     }
   }
   
