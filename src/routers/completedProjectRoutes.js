@@ -6,6 +6,7 @@ import {
   deleteCompletedProjectController,
 } from "../controllers/completedProjectController.js";
 import { requireAuth, requireUser } from "../middlewares/auth.js";
+import { validateId, validateRequired, sanitizeInput } from "../middlewares/validation.js";
 
 const router = express.Router();
 
@@ -14,13 +15,24 @@ const router = express.Router();
 // ===========================
 
 // Crear nuevo proyecto completado
-router.post("/", requireAuth, requireUser, addCompletedProjectController);
+router.post("/", 
+  requireAuth, 
+  requireUser,
+  sanitizeInput,
+  validateRequired(["projectTitle", "companyName"]),
+  addCompletedProjectController
+);
 
 // Obtener todos los proyectos completados del usuario autenticado
 router.get("/my-projects", requireAuth, requireUser, getMyCompletedProjectsController);
 
 // Eliminar un proyecto completado específico
-router.delete("/:id", requireAuth, requireUser, deleteCompletedProjectController);
+router.delete("/:id", 
+  requireAuth, 
+  requireUser,
+  validateId,
+  deleteCompletedProjectController
+);
 
 // ✅ Eliminado el catch-all (Express 5 ya no permite wildcards en Routers)
 

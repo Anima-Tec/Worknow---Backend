@@ -7,6 +7,7 @@ import {
   updateProfile,
 } from "../controllers/authController.js";
 import { requireAuth } from "../middlewares/auth.js";
+import { validateRequired, validateEmail, validatePassword, validateUruguayanPhone, sanitizeInput } from "../middlewares/validation.js";
 
 const router = Router();
 
@@ -15,21 +16,45 @@ const router = Router();
 // ===========================
 
 // Registro de usuario normal
-router.post("/register/user", registerUser);
+router.post("/register/user", 
+  sanitizeInput,
+  validateRequired(["nombre", "apellido", "email", "password"]),
+  validateEmail,
+  validatePassword,
+  validateUruguayanPhone,
+  registerUser
+);
 
 // Registro de empresa
-router.post("/register/company", registerCompany);
+router.post("/register/company", 
+  sanitizeInput,
+  validateRequired(["email", "password", "nombreEmpresa"]),
+  validateEmail,
+  validatePassword,
+  validateUruguayanPhone,
+  registerCompany
+);
 
 // ===========================
 // 🔐 LOGIN
 // ===========================
-router.post("/login", login);
+router.post("/login", 
+  sanitizeInput,
+  validateRequired(["email", "password"]),
+  validateEmail,
+  login
+);
 
 // ===========================
 // 👤 PERFIL (TOKEN REQUERIDO)
 // ===========================
 router.get("/profile", requireAuth, getProfile);
-router.put("/profile", requireAuth, updateProfile);
+router.put("/profile", 
+  requireAuth,
+  sanitizeInput,
+  validateUruguayanPhone,
+  updateProfile
+);
 
 // ✅ Eliminamos la ruta catch-all (ya no compatible dentro del router)
 export default router;

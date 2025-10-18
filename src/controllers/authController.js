@@ -207,7 +207,6 @@ export const getProfile = async (req, res) => {
           experiencia: true,
           educacion: true,
           habilidades: true,
-          formacionAcademica: true,
           role: true,
           createdAt: true
         }
@@ -265,8 +264,7 @@ export const updateProfile = async (req, res) => {
         biografia,
         experiencia,
         educacion,
-        habilidades,
-        formacionAcademica
+        habilidades
       } = req.body;
 
       // Preparar datos para actualización
@@ -295,17 +293,6 @@ export const updateProfile = async (req, res) => {
         }
       }
 
-      // Manejar formación académica (JSON)
-      if (formacionAcademica !== undefined) {
-        try {
-          const formacionData = typeof formacionAcademica === 'string' 
-            ? JSON.parse(formacionAcademica) 
-            : formacionAcademica;
-          updateData.formacionAcademica = formacionData;
-        } catch (error) {
-          return res.status(400).json({ message: "Formación académica inválida" });
-        }
-      }
 
 
       const updated = await prisma.user.update({
@@ -324,7 +311,6 @@ export const updateProfile = async (req, res) => {
           experiencia: true,
           educacion: true,
           habilidades: true,
-          formacionAcademica: true,
           role: true,
           createdAt: true
         }

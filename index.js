@@ -59,6 +59,35 @@ app.use((req, res) => {
 });
 
 // ===========================
+// 🚨 MANEJO GLOBAL DE ERRORES (EXPRESS 5)
+// ===========================
+app.use((err, req, res, next) => {
+  console.error("❌ Error no manejado:", err);
+  
+  // Si es un error de validación de Prisma
+  if (err.code === 'P2002') {
+    return res.status(400).json({
+      error: "Dato duplicado",
+      message: "Ya existe un registro con estos datos"
+    });
+  }
+  
+  // Si es un error de registro no encontrado
+  if (err.code === 'P2025') {
+    return res.status(404).json({
+      error: "Registro no encontrado",
+      message: "El recurso solicitado no existe"
+    });
+  }
+  
+  // Error genérico
+  res.status(500).json({
+    error: "Error interno del servidor",
+    message: process.env.NODE_ENV === 'development' ? err.message : "Algo salió mal"
+  });
+});
+
+// ===========================
 // 💻 INICIO DEL SERVIDOR
 // ===========================
 const PORT = process.env.PORT || 3000;
