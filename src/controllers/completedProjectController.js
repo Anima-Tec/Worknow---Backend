@@ -47,20 +47,55 @@ export const addCompletedProjectController = async (req, res) => {
 // 🟣 Obtener proyectos completados del usuario
 export const getMyCompletedProjectsController = async (req, res) => {
   try {
+    console.log("🚀 === INICIO OBTENER PROYECTOS COMPLETADOS ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
+
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
+    if (!userId) {
+      console.warn("⚠️ No hay userId en el token");
+      return res.status(401).json({ 
+        success: false,
+        message: "Usuario no autenticado" 
+      });
+    }
+
+    console.log("✅ UserId validado:", userId);
+
+    // Verificar conexión a la base de datos
+    console.log("🔌 Verificando conexión a Prisma...");
+    console.log("📊 Prisma client:", !!prisma);
+    console.log("📊 Prisma completedProject:", !!prisma?.completedProject);
 
     const completedProjects = await prisma.completedProject.findMany({
       where: { userId },
-      orderBy: { completionDate: "desc" },
+      orderBy: { createdAt: "desc" },
     });
 
-    console.log(`📋 Usuario ${userId} tiene ${completedProjects.length} proyectos completados`);
+    console.log("📊 Proyectos completados encontrados:", completedProjects.length);
+    console.log("📋 Proyectos completados raw:", completedProjects);
 
-    res.json(completedProjects);
+    console.log(`📋 Usuario ${userId} tiene ${completedProjects.length} proyectos completados`);
+    console.log("🏁 === FIN OBTENER PROYECTOS COMPLETADOS ===");
+
+    return res.status(200).json({
+      success: true,
+      data: completedProjects
+    });
   } catch (error) {
-    console.error("❌ Error obteniendo proyectos completados:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    console.error("❌ === ERROR OBTENER PROYECTOS COMPLETADOS ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      details: process.env.NODE_ENV === 'development' ? error.message : "Algo salió mal al obtener proyectos completados"
+    });
   }
 };
 

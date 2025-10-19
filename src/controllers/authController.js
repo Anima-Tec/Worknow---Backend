@@ -219,9 +219,17 @@ export const registerCompany = async (req, res) => {
 // ----------------------------------------
 export const getProfile = async (req, res) => {
   try {
+    console.log("🚀 === INICIO OBTENER PERFIL ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
+
     const { id, role } = req.user; // viene del middleware requireAuth
 
+    console.log("✅ Usuario validado:", { id, role });
+
     if (role === "USER") {
+      console.log("👤 Obteniendo perfil de usuario...");
       const user = await prisma.user.findUnique({ 
         where: { id },
         select: {
@@ -236,15 +244,21 @@ export const getProfile = async (req, res) => {
           biografia: true,
           experiencia: true,
           educacion: true,
-          habilidades: true,
           role: true,
-          createdAt: true
+          createdAt: true,
+          updatedAt: true
         }
       });
      
       if (!user) {
-        return res.status(404).json({ message: "Usuario no encontrado" });
+        console.warn("❌ Usuario no encontrado:", id);
+        return res.status(404).json({ 
+          success: false,
+          message: "Usuario no encontrado" 
+        });
       }
+
+      console.log("✅ Usuario encontrado:", user);
 
       // ✅ Convertir fechaNacimiento a formato YYYY-MM-DD para el input date
       if (user.fechaNacimiento) {
@@ -253,22 +267,31 @@ export const getProfile = async (req, res) => {
           .split('T')[0];
       }
 
-      return res.json(user);
+      console.log("🏁 === FIN OBTENER PERFIL USUARIO ===");
+      return res.status(200).json({
+        success: true,
+        data: user
+      });
     }
 
     if (role === "COMPANY") {
+      console.log("🏢 Obteniendo perfil de empresa...");
       const company = await prisma.company.findUnique({ where: { id } });
      
       if (!company) {
+        console.warn("❌ Empresa no encontrada:", id);
         return res.status(404).json({ 
           success: false,
           error: "Empresa no encontrada" 
         });
       }
 
+      console.log("✅ Empresa encontrada:", company);
+
       // No devolver el password
       const { password, ...companyWithoutPassword } = company;
-      return res.json({
+      console.log("🏁 === FIN OBTENER PERFIL EMPRESA ===");
+      return res.status(200).json({
         success: true,
         data: {
           id: companyWithoutPassword.id,
@@ -281,16 +304,34 @@ export const getProfile = async (req, res) => {
           sector: companyWithoutPassword.sector,
           sitioWeb: companyWithoutPassword.sitioWeb,
           tamano: companyWithoutPassword.tamano,
-          role: companyWithoutPassword.role
+          descripcion: companyWithoutPassword.descripcion,
+          logoUrl: companyWithoutPassword.logoUrl,
+          role: companyWithoutPassword.role,
+          createdAt: companyWithoutPassword.createdAt,
+          updatedAt: companyWithoutPassword.updatedAt
         }
       });
     }
 
-    return res.status(400).json({ message: "Rol no válido" });
-  } catch (error) {
-    res.status(500).json({ 
+    // Si no es ni USER ni COMPANY
+    console.warn("❌ Rol no válido:", role);
+    return res.status(400).json({ 
       success: false,
-      error: "Error interno del servidor" 
+      message: "Rol no válido" 
+    });
+
+  } catch (error) {
+    console.error("❌ === ERROR OBTENER PERFIL ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({ 
+      success: false,
+      error: "Error interno del servidor",
+      details: process.env.NODE_ENV === 'development' ? error.message : "Algo salió mal al obtener el perfil"
     });
   }
 };
@@ -303,6 +344,12 @@ export const updateProfile = async (req, res) => {
     const { id, role } = req.user;
     
     if (role === "USER") {
+      console.log("🚀 === INICIO ACTUALIZAR PERFIL USUARIO ===");
+      console.log("📋 Headers recibidos:", req.headers);
+      console.log("🔑 Token de autorización:", req.headers.authorization);
+      console.log("👤 Usuario del token:", req.user);
+      console.log("📦 Datos del body:", req.body);
+
       // Procesar datos del formulario
       const {
         nombre,
@@ -313,9 +360,10 @@ export const updateProfile = async (req, res) => {
         profesion,
         biografia,
         experiencia,
-        educacion,
-        habilidades
+        educacion
       } = req.body;
+
+      console.log("✅ Datos extraídos:", { nombre, apellido, telefono, fechaNacimiento, ciudad, profesion, biografia, experiencia, educacion });
 
       // Preparar datos para actualización
       const updateData = {};
@@ -328,7 +376,6 @@ export const updateProfile = async (req, res) => {
       if (biografia !== undefined) updateData.biografia = biografia;
       if (experiencia !== undefined) updateData.experiencia = experiencia;
       if (educacion !== undefined) updateData.educacion = educacion;
-      if (habilidades !== undefined) updateData.habilidades = habilidades;
 
       // Manejar fechaNacimiento
       if (fechaNacimiento !== undefined) {
@@ -345,6 +392,8 @@ export const updateProfile = async (req, res) => {
 
 
 
+      console.log("📝 Datos para actualizar:", updateData);
+
       const updated = await prisma.user.update({
         where: { id },
         data: updateData,
@@ -360,9 +409,9 @@ export const updateProfile = async (req, res) => {
           biografia: true,
           experiencia: true,
           educacion: true,
-          habilidades: true,
           role: true,
-          createdAt: true
+          createdAt: true,
+          updatedAt: true
         }
       });
 
@@ -371,13 +420,23 @@ export const updateProfile = async (req, res) => {
         updated.fechaNacimiento = updated.fechaNacimiento.toISOString().split('T')[0];
       }
 
-      return res.json({
-        message: "Perfil de usuario actualizado",
-        updated: updated
+      console.log("✅ Usuario actualizado:", updated);
+      console.log("🏁 === FIN ACTUALIZAR PERFIL USUARIO ===");
+
+      return res.status(200).json({
+        success: true,
+        message: "Perfil actualizado correctamente",
+        data: updated
       });
     }
 
     if (role === "COMPANY") {
+      console.log("🚀 === INICIO ACTUALIZAR PERFIL EMPRESA ===");
+      console.log("📋 Headers recibidos:", req.headers);
+      console.log("🔑 Token de autorización:", req.headers.authorization);
+      console.log("👤 Usuario del token:", req.user);
+      console.log("📦 Datos del body:", req.body);
+
       const {
         nombreEmpresa,
         rut,
@@ -386,8 +445,12 @@ export const updateProfile = async (req, res) => {
         ciudad,
         sector,
         sitioWeb,
-        tamano
+        tamano,
+        descripcion,
+        logoUrl
       } = req.body;
+
+      console.log("✅ Datos extraídos:", { nombreEmpresa, rut, telefono, direccion, ciudad, sector, sitioWeb, tamano, descripcion, logoUrl });
       
       // Preparar datos para actualización
       const updateData = {};
@@ -400,16 +463,24 @@ export const updateProfile = async (req, res) => {
       if (sector !== undefined) updateData.sector = sector;
       if (sitioWeb !== undefined) updateData.sitioWeb = sitioWeb;
       if (tamano !== undefined) updateData.tamano = tamano;
+      if (descripcion !== undefined) updateData.descripcion = descripcion;
+      if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+
+      console.log("📝 Datos para actualizar:", updateData);
 
       const updated = await prisma.company.update({
         where: { id },
         data: updateData
       });
 
+      console.log("✅ Empresa actualizada:", updated);
+
       // No devolver el password
       const { password, ...updatedWithoutPassword } = updated;
 
-      return res.json({
+      console.log("🏁 === FIN ACTUALIZAR PERFIL EMPRESA ===");
+
+      return res.status(200).json({
         success: true,
         message: "Perfil actualizado exitosamente",
         data: {
@@ -423,16 +494,34 @@ export const updateProfile = async (req, res) => {
           sector: updatedWithoutPassword.sector,
           sitioWeb: updatedWithoutPassword.sitioWeb,
           tamano: updatedWithoutPassword.tamano,
-          role: updatedWithoutPassword.role
+          descripcion: updatedWithoutPassword.descripcion,
+          logoUrl: updatedWithoutPassword.logoUrl,
+          role: updatedWithoutPassword.role,
+          createdAt: updatedWithoutPassword.createdAt,
+          updatedAt: updatedWithoutPassword.updatedAt
         }
       });
     }
 
-    return res.status(400).json({ message: "Rol no válido" });
-  } catch (error) {
-    res.status(500).json({
+    // Si no es ni USER ni COMPANY
+    console.warn("❌ Rol no válido:", role);
+    return res.status(400).json({ 
       success: false,
-      error: "Error interno del servidor"
+      message: "Rol no válido" 
+    });
+
+  } catch (error) {
+    console.error("❌ === ERROR ACTUALIZAR PERFIL ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      error: "Error interno del servidor",
+      details: process.env.NODE_ENV === 'development' ? error.message : "Algo salió mal al actualizar el perfil"
     });
   }
 };

@@ -23,7 +23,6 @@ router.post("/",
   requireAuth, 
   requireCompany,
   sanitizeInput,
-  validateRequired(["title", "description"]),
   createJobController
 );
 

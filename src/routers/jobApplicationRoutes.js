@@ -23,7 +23,17 @@ router.post("/job/:id/apply",
   applyToJobController
 );
 
-// Usuario ve sus propias postulaciones a trabajos
+// Nueva ruta para postularse a trabajos (ruta específica)
+router.post("/:jobId", 
+  requireAuth, 
+  requireUser,
+  validateId,
+  validateRequired(["name", "email"]),
+  sanitizeInput,
+  applyToJobController
+);
+
+// Endpoint para que usuarios vean sus postulaciones a trabajos
 router.get("/user/me", requireAuth, requireUser, getMyJobApplicationsController);
 
 // ===========================

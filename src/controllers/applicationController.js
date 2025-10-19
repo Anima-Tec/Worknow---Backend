@@ -3,24 +3,62 @@ import { prisma } from "../database/prismaClient.js";
 // 🟣 Usuario se postula a un proyecto
 export const applyToProjectController = async (req, res) => {
   try {
-    const projectId = Number(req.params.id);
+    console.log("🚀 === INICIO APLICAR A PROYECTO ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
+    console.log("📦 Datos del body:", req.body);
+    console.log("📋 Params:", req.params);
+
+    const projectId = Number(req.params.id || req.params.projectId);
     const userId = req.user?.id;
     const { name, email } = req.body;
 
-    console.log(`📝 Usuario ${userId} postulándose a proyecto ${projectId}`);
+    console.log("✅ Datos extraídos:", { userId, projectId, name, email });
 
-    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
-    if (!projectId) return res.status(400).json({ message: "ID de proyecto requerido" });
+    if (!userId) {
+      console.warn("⚠️ Usuario no autenticado");
+      return res.status(401).json({ 
+        success: false,
+        message: "Usuario no autenticado" 
+      });
+    }
+    if (!projectId) {
+      console.warn("⚠️ ID de proyecto requerido");
+      return res.status(400).json({ 
+        success: false,
+        message: "ID de proyecto requerido" 
+      });
+    }
+
+    console.log("🔌 Verificando conexión a Prisma...");
+    console.log("📊 Prisma client:", !!prisma);
+    console.log("📊 Prisma project:", !!prisma?.project);
+    console.log("📊 Prisma application:", !!prisma?.application);
 
     // Verificar que el proyecto exista
     const project = await prisma.project.findUnique({ where: { id: projectId } });
-    if (!project) return res.status(404).json({ message: "Proyecto no encontrado" });
+    if (!project) {
+      console.warn("❌ Proyecto no encontrado:", projectId);
+      return res.status(404).json({ 
+        success: false,
+        message: "Proyecto no encontrado" 
+      });
+    }
+
+    console.log("✅ Proyecto encontrado:", project.title);
 
     // Evitar duplicados
-    const existing = await prisma.projectApplication.findUnique({
+    const existing = await prisma.application.findUnique({
       where: { userId_projectId: { userId, projectId } },
     });
-    if (existing) return res.status(409).json({ message: "Ya te postulaste a este proyecto" });
+    if (existing) {
+      console.warn("❌ Ya existe postulación:", { userId, projectId });
+      return res.status(409).json({ 
+        success: false,
+        message: "Ya te postulaste a este proyecto" 
+      });
+    }
 
     // Actualizar nombre/email del usuario si se mandan
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -36,12 +74,12 @@ export const applyToProjectController = async (req, res) => {
     }
 
     // Crear postulación
-    const application = await prisma.projectApplication.create({
+    console.log("💾 Creando postulación en la base de datos...");
+    const application = await prisma.application.create({
       data: {
         userId,
         projectId,
         status: "PENDIENTE",
-        message: name && email ? `Postulación de ${name} (${email})` : "Postulación realizada",
       },
       include: {
         user: { select: { nombre: true, email: true } },
@@ -49,28 +87,61 @@ export const applyToProjectController = async (req, res) => {
       },
     });
 
+    console.log("✅ Postulación creada:", application);
     console.log(`✅ Postulación ${application.id} creada correctamente`);
+    console.log("🏁 === FIN APLICAR A PROYECTO ===");
 
-    res.status(201).json({
-      message: "✅ Postulación creada correctamente",
-      application,
+    return res.status(201).json({
+      success: true,
+      message: "Postulación creada correctamente",
+      data: application,
     });
   } catch (error) {
-    console.error("❌ Error creando postulación:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    console.error("❌ === ERROR APLICAR A PROYECTO ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_ERROR",
+      details: "Error interno del servidor"
+    });
   }
 };
 
-// 🟣 Empresa ve las postulaciones a sus proyectos
+// 🟣 Empresa ve SOLO las postulaciones a sus proyectos
 export const getCompanyApplicationsController = async (req, res) => {
   try {
+    console.log("🚀 === INICIO OBTENER APLICACIONES DE PROYECTOS DE EMPRESA ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
+
     const companyId = req.user?.id;
-    if (!companyId) return res.status(401).json({ message: "No autorizado" });
+    if (!companyId) {
+      console.warn("⚠️ No hay companyId en el token");
+      return res.status(401).json({ 
+        success: false,
+        message: "No autorizado" 
+      });
+    }
 
-    console.log(`🏢 Empresa ${companyId} viendo sus postulaciones`);
+    console.log("✅ CompanyId validado:", companyId);
 
-    const applications = await prisma.projectApplication.findMany({
-      where: { project: { companyId: companyId } },
+    console.log("🔌 Verificando conexión a Prisma...");
+    console.log("📊 Prisma client:", !!prisma);
+    console.log("📊 Prisma application:", !!prisma?.application);
+
+    // Obtener SOLO aplicaciones de proyectos de la empresa autenticada
+    const projectApplications = await prisma.application.findMany({
+      where: { 
+        project: { 
+          companyId: companyId 
+        } 
+      },
       include: {
         project: { select: { title: true } },
         user: { select: { nombre: true, email: true } },
@@ -78,36 +149,208 @@ export const getCompanyApplicationsController = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
     
+    console.log("📊 Aplicaciones de proyectos encontradas:", projectApplications.length);
 
-    // 🔥 FIX: siempre extrae nombre/email del mensaje si el usuario no los tiene
-    const formatted = applications.map((a) => {
-      let name = a.user?.nombre;
-      let email = a.user?.email;
+    // Formatear aplicaciones de proyectos con estructura requerida
+    const formattedApplications = projectApplications.map((app) => ({
+      id: app.id,
+      status: app.status,
+      createdAt: app.createdAt,
+      applicantName: app.user?.nombre || "Sin nombre",
+      applicantEmail: app.user?.email || "Email no disponible",
+      projectId: app.projectId,
+      projectTitle: app.project.title,
+    }));
 
-      if ((!name || !email) && a.message?.includes("Postulación de")) {
-        const match = a.message.match(/Postulación de (.+?) \((.+?)\)/);
-        if (match) {
-          name = match[1];
-          email = match[2];
-        }
-      }
+    console.log(`📋 Total de aplicaciones de proyectos: ${formattedApplications.length}`);
+    console.log("🏁 === FIN OBTENER APLICACIONES DE PROYECTOS DE EMPRESA ===");
 
-      return {
-        id: a.id,
-        projectTitle: a.project.title,
-        applicantName: name || "Sin nombre",
-        applicantEmail: email || "Email no disponible",
-        createdAt: a.createdAt,
-        status: a.status,
-      };
+    return res.status(200).json({
+      success: true,
+      message: "Aplicaciones de proyectos obtenidas correctamente",
+      data: formattedApplications
+    });
+  } catch (error) {
+    console.error("❌ === ERROR OBTENER APLICACIONES DE PROYECTOS DE EMPRESA ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : "Error interno"
+    });
+  }
+};
+
+// 🟣 Empresa ve SOLO las postulaciones a sus trabajos
+export const getCompanyJobApplicationsController = async (req, res) => {
+  try {
+    console.log("🚀 === INICIO OBTENER APLICACIONES DE TRABAJOS DE EMPRESA ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
+
+    const companyId = req.user?.id;
+    if (!companyId) {
+      console.warn("⚠️ No hay companyId en el token");
+      return res.status(401).json({ 
+        success: false,
+        message: "No autorizado" 
+      });
+    }
+
+    console.log("✅ CompanyId validado:", companyId);
+
+    console.log("🔌 Verificando conexión a Prisma...");
+    console.log("📊 Prisma client:", !!prisma);
+    console.log("📊 Prisma jobApplication:", !!prisma?.jobApplication);
+
+    // Obtener SOLO aplicaciones de trabajos de la empresa autenticada
+    const jobApplications = await prisma.jobApplication.findMany({
+      where: { 
+        job: { 
+          companyId: companyId 
+        } 
+      },
+      include: {
+        job: { select: { title: true } },
+        user: { select: { nombre: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
     });
 
-    console.log(`📋 Empresa ve ${formatted.length} postulaciones`);
+    console.log("📊 Aplicaciones de trabajos encontradas:", jobApplications.length);
 
-    res.json(formatted);
+    // Formatear aplicaciones de trabajos con estructura requerida
+    const formattedApplications = jobApplications.map((app) => ({
+      id: app.id,
+      status: app.status,
+      createdAt: app.createdAt,
+      applicantName: app.user?.nombre || "Sin nombre",
+      applicantEmail: app.user?.email || "Email no disponible",
+      jobId: app.jobId,
+      jobTitle: app.job.title,
+    }));
+
+    console.log(`📋 Total de aplicaciones de trabajos: ${formattedApplications.length}`);
+    console.log("🏁 === FIN OBTENER APLICACIONES DE TRABAJOS DE EMPRESA ===");
+
+    return res.status(200).json({
+      success: true,
+      message: "Aplicaciones de trabajos obtenidas correctamente",
+      data: formattedApplications
+    });
   } catch (error) {
-    console.error("❌ Error obteniendo postulaciones de empresa:", error);
-    res.status(500).json({ message: "Error obteniendo postulaciones" });
+    console.error("❌ === ERROR OBTENER APLICACIONES DE TRABAJOS DE EMPRESA ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : "Error interno"
+    });
+  }
+};
+
+// 🟣 Empresa ve las postulaciones a sus proyectos Y trabajos (COMBINADO - OBSOLETO)
+export const getCompanyApplicationsControllerCombined = async (req, res) => {
+  try {
+    console.log("🚀 === INICIO OBTENER APLICACIONES DE EMPRESA ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
+
+    const companyId = req.user?.id;
+    if (!companyId) {
+      console.warn("⚠️ No hay companyId en el token");
+      return res.status(401).json({ 
+        success: false,
+        message: "No autorizado" 
+      });
+    }
+
+    console.log("✅ CompanyId validado:", companyId);
+
+    console.log("🔌 Verificando conexión a Prisma...");
+    console.log("📊 Prisma client:", !!prisma);
+    console.log("📊 Prisma application:", !!prisma?.application);
+    console.log("📊 Prisma jobApplication:", !!prisma?.jobApplication);
+
+    // Obtener aplicaciones de proyectos Y trabajos
+    const [projectApplications, jobApplications] = await Promise.all([
+      prisma.application.findMany({
+        where: { project: { companyId: companyId } },
+        include: {
+          project: { select: { title: true } },
+          user: { select: { nombre: true, email: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.jobApplication.findMany({
+        where: { job: { companyId: companyId } },
+        include: {
+          job: { select: { title: true } },
+          user: { select: { nombre: true, email: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    ]);
+
+    console.log("📊 Aplicaciones de proyectos encontradas:", projectApplications.length);
+    console.log("📊 Aplicaciones de trabajos encontradas:", jobApplications.length);
+
+    // Formatear aplicaciones de proyectos (mantener estructura original)
+    const formattedProjects = projectApplications.map((a) => ({
+        id: a.id,
+        projectTitle: a.project.title,
+      applicantName: a.user?.nombre || "Sin nombre",
+      applicantEmail: a.user?.email || "Email no disponible",
+      createdAt: a.createdAt,
+      status: a.status,
+      type: "project", // Campo para identificar el tipo
+    }));
+
+    // Formatear aplicaciones de trabajos (mantener estructura original)
+    const formattedJobs = jobApplications.map((a) => ({
+      id: a.id,
+      projectTitle: a.job.title, // Usar projectTitle para mantener compatibilidad
+      applicantName: a.user?.nombre || "Sin nombre",
+      applicantEmail: a.user?.email || "Email no disponible",
+        createdAt: a.createdAt,
+        status: a.status,
+      type: "job", // Campo para identificar el tipo
+    }));
+
+    // Combinar y ordenar por fecha
+    const allApplications = [...formattedProjects, ...formattedJobs]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    console.log(`📋 Total de aplicaciones: ${allApplications.length} (${formattedProjects.length} proyectos + ${formattedJobs.length} trabajos)`);
+    console.log("🏁 === FIN OBTENER APLICACIONES DE EMPRESA ===");
+
+    // Devolver en formato original para mantener compatibilidad
+    return res.status(200).json(allApplications);
+  } catch (error) {
+    console.error("❌ === ERROR OBTENER APLICACIONES DE EMPRESA ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_ERROR",
+      details: "Error interno del servidor"
+    });
   }
 };
 
@@ -120,10 +363,13 @@ export const updateApplicationStatusController = async (req, res) => {
 
     console.log(`🏢 Empresa actualizando aplicación ${id} a estado: ${status}`);
 
-    if (!status) return res.status(400).json({ message: "Falta el nuevo estado" });
+    if (!status) return res.status(400).json({ 
+      success: false,
+      message: "Falta el nuevo estado" 
+    });
 
     // 1. Primero obtener la aplicación para verificar permisos y datos
-    const application = await prisma.projectApplication.findUnique({
+    const application = await prisma.application.findUnique({
       where: { id },
       include: {
         project: {
@@ -137,12 +383,27 @@ export const updateApplicationStatusController = async (req, res) => {
     });
 
     if (!application) {
-      return res.status(404).json({ message: "Postulación no encontrada" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Postulación no encontrada" 
+      });
     }
 
     // 2. Verificar que la empresa es dueña del proyecto
     if (application.project.companyId !== companyId) {
-      return res.status(403).json({ message: "No autorizado para modificar esta postulación" });
+      return res.status(403).json({ 
+        success: false,
+        message: "No autorizado para modificar esta postulación" 
+      });
+    }
+
+    // 3. VALIDACIÓN ESTRICTA: Solo permitir cambios si está PENDIENTE o EN_REVISION
+    if (application.status !== "PENDIENTE" && application.status !== "EN_REVISION") {
+      console.warn("❌ Intento de modificar aplicación en estado final:", id, application.status);
+      return res.status(400).json({ 
+        success: false,
+        message: `No se puede modificar una postulación que está ${application.status === "ACEPTADO" ? "aceptada" : "rechazada"}. Solo se pueden modificar postulaciones pendientes o en revisión.` 
+      });
     }
 
     let updatedApplication;
@@ -151,20 +412,19 @@ export const updateApplicationStatusController = async (req, res) => {
     if (status === "ACEPTADO") {
       await prisma.$transaction(async (tx) => {
         // a) Rechazar TODAS las otras postulaciones al mismo proyecto
-        await tx.projectApplication.updateMany({
+        await tx.application.updateMany({
           where: {
             projectId: application.projectId, // Mismo proyecto
             id: { not: id }, // Excluir la actual
             status: { not: "ACEPTADO" } // No modificar las ya aceptadas
           },
           data: { 
-            status: "RECHAZADO",
-            visto: false // Marcar como no leído para notificar
+            status: "RECHAZADO"
           }
         });
 
         // b) Actualizar la postulación actual a ACEPTADO
-        updatedApplication = await tx.projectApplication.update({
+        updatedApplication = await tx.application.update({
           where: { id },
           data: { status },
           include: {
@@ -178,7 +438,7 @@ export const updateApplicationStatusController = async (req, res) => {
 
     } else {
       // Para otros estados (RECHAZADO, PENDIENTE), solo actualizar esta postulación
-      updatedApplication = await prisma.projectApplication.update({
+      updatedApplication = await prisma.application.update({
         where: { id },
         data: { status },
         include: {
@@ -190,15 +450,19 @@ export const updateApplicationStatusController = async (req, res) => {
 
     console.log(`✅ Empresa actualizó estado de aplicación ${id} a: ${status}`);
 
-    res.json({ 
-      message: "✅ Estado actualizado", 
-      application: updatedApplication,
-      autoRejected: status === "ACEPTADO" // Indicar que se rechazaron otras automáticamente
+    return res.status(200).json({ 
+      success: true,
+      message: "Estado de postulación actualizado correctamente",
+      data: updatedApplication
     });
 
   } catch (error) {
     console.error("❌ Error actualizando estado:", error);
-    res.status(500).json({ message: "Error actualizando estado" });
+    return res.status(500).json({ 
+      success: false,
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : "Error interno"
+    });
   }
 };
 
@@ -210,7 +474,7 @@ export const getMyApplicationsController = async (req, res) => {
 
     console.log(`👤 Usuario ${userId} viendo sus postulaciones`);
 
-    const applications = await prisma.projectApplication.findMany({
+    const applications = await prisma.application.findMany({
       where: { userId },
       include: {
         project: {
@@ -224,22 +488,29 @@ export const getMyApplicationsController = async (req, res) => {
 
     const formattedApplications = applications.map(app => ({
       id: app.id,
+      status: app.status,
+      createdAt: app.createdAt,
       projectTitle: app.project.title,
       companyName: app.project.company.nombreEmpresa,
-      status: app.status,
-      visto: app.visto,
-      createdAt: app.createdAt,
-      updatedAt: app.updatedAt,
     }));
 
     console.log(`📋 Usuario tiene ${formattedApplications.length} postulaciones`);
 
-    res.json(formattedApplications);
+    return res.status(200).json({
+      success: true,
+      message: "Postulaciones obtenidas correctamente",
+      data: formattedApplications
+    });
   } catch (error) {
     console.error("❌ Error obteniendo mis postulaciones:", error);
-    res.status(500).json({ message: "Error obteniendo postulaciones" });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : "Error interno"
+    });
   }
 };
+
 
 // 🟣 Marcar postulación como leída
 export const markAsReadController = async (req, res) => {
@@ -251,12 +522,12 @@ export const markAsReadController = async (req, res) => {
 
     if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
 
-    const application = await prisma.projectApplication.findFirst({ where: { id, userId } });
+    const application = await prisma.application.findFirst({ where: { id, userId } });
     if (!application) return res.status(404).json({ message: "Postulación no encontrada" });
 
-    const updated = await prisma.projectApplication.update({
+    const updated = await prisma.application.update({
       where: { id },
-      data: { visto: true },
+      data: { updatedAt: new Date() },
     });
 
     console.log(`✅ Aplicación ${id} marcada como leída`);
@@ -273,10 +544,9 @@ export const getNotificationCountController = async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
 
-    const count = await prisma.projectApplication.count({
+    const count = await prisma.application.count({
       where: {
         userId,
-        visto: false,
         status: { in: ["ACEPTADO", "RECHAZADO"] },
       },
     });
@@ -292,25 +562,69 @@ export const getNotificationCountController = async (req, res) => {
 // 🟣 Usuario actualiza su propia postulación (Hecho/No hecho)
 export const updateMyApplicationStatusController = async (req, res) => {
   try {
+    console.log("🚀 === INICIO ACTUALIZAR ESTADO POSTULACIÓN USUARIO ===");
     const id = Number(req.params.id);
     const { status } = req.body;
     const userId = req.user?.id;
 
     console.log(`👤 Usuario ${userId} actualizando su postulación ${id} a ${status}`);
 
-    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
+    // Validaciones básicas
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Usuario no autenticado"
+      });
+    }
 
-    const application = await prisma.projectApplication.findFirst({
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Falta el nuevo estado"
+      });
+    }
+
+    // Validar que el estado sea válido
+    if (status !== "HECHO" && status !== "NO_HECHO") {
+      return res.status(400).json({
+        success: false,
+        message: "Estado inválido. Solo se permiten estados 'HECHO' o 'NO_HECHO'"
+      });
+    }
+
+    const application = await prisma.application.findFirst({
       where: { id, userId },
-      include: { project: { include: { company: true } } },
+      include: { 
+        project: { 
+          include: { 
+            company: true 
+          } 
+        } 
+      },
     });
 
-    if (!application) return res.status(404).json({ message: "Postulación no encontrada" });
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Postulación no encontrada"
+      });
+    }
+
+    // Verificar que la postulación esté en estado ACEPTADO
+    if (application.status !== "ACEPTADO") {
+      return res.status(400).json({
+        success: false,
+        message: "Solo se puede actualizar el estado de postulaciones que están ACEPTADAS"
+      });
+    }
 
     // Actualizar estado de la postulación
-    const updatedApplication = await prisma.projectApplication.update({
+    const updatedApplication = await prisma.application.update({
       where: { id },
-      data: { status },
+      data: { 
+        status,
+        updatedAt: new Date()
+      },
     });
 
     // 🆕 Si marca como "Hecho", se agrega al perfil del usuario
@@ -331,15 +645,10 @@ export const updateMyApplicationStatusController = async (req, res) => {
         if (projectDetails) {
           await prisma.completedProject.create({
             data: {
-              projectTitle: projectDetails.title,
-              companyName: projectDetails.company.nombreEmpresa,
+              title: projectDetails.title,
               description: `Proyecto completado para ${projectDetails.company.nombreEmpresa}: ${projectDetails.description}`,
-              skills: JSON.stringify(projectDetails.skills) || "No especificadas",
-              duration: projectDetails.duration || "No especificada",
-              modality: projectDetails.modality || "No especificada",
-              remuneration: projectDetails.remuneration || "No especificada",
               userId: userId,
-              applicationId: id,
+              projectId: projectDetails.id,
             },
           });
 
@@ -350,122 +659,389 @@ export const updateMyApplicationStatusController = async (req, res) => {
       }
     }
 
-    res.json({
-      message: "✅ Estado de postulación actualizado",
-      application: updatedApplication,
+    return res.status(200).json({
+      success: true,
+      message: "Estado actualizado correctamente",
+      data: {
+        id: updatedApplication.id,
+        status: updatedApplication.status,
+        updatedAt: updatedApplication.updatedAt
+      }
     });
   } catch (error) {
     console.error("❌ Error actualizando estado de postulación:", error);
-    res.status(500).json({ message: "Error actualizando estado de postulación" });
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : "Error interno"
+    });
   }
 };
 
 // 🟣 Usuario se postula a un trabajo
 export const applyToJobController = async (req, res) => {
   try {
-    const jobId = Number(req.params.id);
+    console.log("🚀 === INICIO APLICAR A TRABAJO ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
+    console.log("📦 Datos del body:", req.body);
+    console.log("📋 Params:", req.params);
+
+    // Manejar ambos casos: /job/:id/apply y /job-applications/:jobId
+    const jobId = Number(req.params.id || req.params.jobId);
     const userId = req.user?.id;
     const { name, email } = req.body;
 
-    console.log(`📝 Usuario ${userId} postulándose al trabajo ${jobId}`);
+    console.log("✅ Datos extraídos:", { userId, jobId, name, email });
 
-    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
-    if (!jobId) return res.status(400).json({ message: "ID de trabajo requerido" });
+    // Validaciones básicas
+    if (!userId) {
+      console.warn("⚠️ Usuario no autenticado");
+      return res.status(401).json({ 
+        success: false,
+        message: "Usuario no autenticado" 
+      });
+    }
 
-    const job = await prisma.job.findUnique({ where: { id: jobId } });
-    if (!job) return res.status(404).json({ message: "Trabajo no encontrado" });
+    if (!jobId) {
+      console.warn("⚠️ ID de trabajo requerido");
+      return res.status(400).json({ 
+        success: false,
+        message: "ID de trabajo requerido" 
+      });
+    }
 
+    console.log("🔌 Verificando conexión a Prisma...");
+    console.log("📊 Prisma client:", !!prisma);
+    console.log("📊 Prisma job:", !!prisma?.job);
+    console.log("📊 Prisma jobApplication:", !!prisma?.jobApplication);
+
+    // Verificar que el trabajo exista y pertenezca a una empresa
+    const job = await prisma.job.findUnique({ 
+      where: { id: jobId },
+      include: {
+        company: { select: { id: true, nombreEmpresa: true } }
+      }
+    });
+    
+    if (!job) {
+      console.warn("❌ Trabajo no encontrado:", jobId);
+      return res.status(404).json({ 
+        success: false,
+        message: "Trabajo no encontrado" 
+      });
+    }
+
+    console.log("✅ Trabajo encontrado:", job.title, "Empresa:", job.company.nombreEmpresa);
+
+    // Validar constraint único [userId, jobId] - evitar duplicados
     const existing = await prisma.jobApplication.findUnique({
       where: { userId_jobId: { userId, jobId } },
     });
-    if (existing) return res.status(409).json({ message: "Ya te postulaste a este trabajo" });
+    
+    if (existing) {
+      console.warn("❌ Ya existe postulación:", { userId, jobId });
+      return res.status(409).json({ 
+        success: false,
+        message: "Ya te postulaste a este trabajo" 
+      });
+    }
 
+    // Actualizar nombre/email del usuario si se proporcionan
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const updateData = {};
+    if (name && !user.nombre) updateData.nombre = name;
+    if (email && user.email !== email) updateData.email = email;
+
+    if (Object.keys(updateData).length > 0) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+      });
+    }
+
+    // Crear postulación con status PENDIENTE
+    console.log("💾 Creando postulación en la base de datos...");
     const application = await prisma.jobApplication.create({
       data: {
         userId,
         jobId,
         status: "PENDIENTE",
-        message: name && email ? `Postulación de ${name} (${email})` : "Postulación realizada",
       },
-      include: {
-        user: { select: { nombre: true, email: true } },
-        job: { select: { title: true } },
-      },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+      }
     });
 
-    console.log("✅ Postulación creada correctamente:", application.id);
-    res.status(201).json({ message: "✅ Postulación creada correctamente", application });
+    console.log("✅ Postulación creada:", application);
+    console.log(`✅ Postulación ${application.id} creada correctamente`);
+    console.log("🏁 === FIN APLICAR A TRABAJO ===");
+
+    return res.status(201).json({
+      success: true,
+      message: "Postulación enviada correctamente",
+      data: {
+        id: application.id,
+        status: application.status,
+        createdAt: application.createdAt
+      }
+    });
+
   } catch (error) {
-    console.error("❌ Error creando postulación de trabajo:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    console.error("❌ === ERROR APLICAR A TRABAJO ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : "Error interno"
+    });
   }
 };
 // 🟣 Contar notificaciones no leídas de empresa
 export const getCompanyNotificationCountController = async (req, res) => {
   try {
-    const companyId = req.user?.id;
-    if (!companyId) return res.status(401).json({ message: "No autorizado" });
+    console.log("🚀 === INICIO CONTAR NOTIFICACIONES EMPRESA ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
 
-    // ✅ Corregido: el endpoint devuelve solo el contador
+    const companyId = req.user?.id;
+    if (!companyId) {
+      console.warn("⚠️ No hay companyId en el token");
+      return res.status(401).json({ 
+        success: false,
+        message: "No autorizado" 
+      });
+    }
+
+    console.log("✅ CompanyId validado:", companyId);
+
+    // Verificar conexión a la base de datos
+    console.log("🔌 Verificando conexión a Prisma...");
+    console.log("📊 Prisma client:", !!prisma);
+    console.log("📊 Prisma projectApplication:", !!prisma?.projectApplication);
+    console.log("📊 Prisma jobApplication:", !!prisma?.jobApplication);
+
+    // Contar postulaciones pendientes (que son las "notificaciones" para la empresa)
     const [projectsCount, jobsCount] = await Promise.all([
-      prisma.projectApplication.count({
+      prisma.application.count({
         where: {
           project: { companyId },
-          vistoCompany: false,
-          status: { in: ["ACEPTADO", "HECHO"] },
+          status: "PENDIENTE",
         },
       }),
       prisma.jobApplication.count({
         where: {
           job: { companyId },
-          vistoCompany: false,
-          status: { in: ["ACEPTADO", "HECHO"] },
+          status: "PENDIENTE",
         },
       }),
     ]);
 
     const total = projectsCount + jobsCount;
 
-    console.log(`🔔 Empresa ${companyId} tiene ${total} notificaciones no leídas`);
-    res.json({ count: total }); // 🔹 solo count, no lista completa
+    console.log(`🔔 Empresa ${companyId} tiene ${total} notificaciones (${projectsCount} proyectos + ${jobsCount} trabajos)`);
+    console.log("🏁 === FIN CONTAR NOTIFICACIONES EMPRESA ===");
+
+    return res.status(200).json({
+      success: true,
+      count: total,
+      projectsCount,
+      jobsCount
+    });
   } catch (error) {
-    console.error("❌ Error contando notificaciones para empresa:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    console.error("❌ === ERROR CONTAR NOTIFICACIONES EMPRESA ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      details: process.env.NODE_ENV === 'development' ? error.message : "Algo salió mal al contar notificaciones"
+    });
   }
 };
 
 export const markCompanyApplicationsAsReadController = async (req, res) => {
   try {
+    console.log("🚀 === INICIO MARCAR NOTIFICACIONES COMO LEÍDAS ===");
+    
     const companyId = req.user?.id;
-    if (!companyId) return res.status(401).json({ message: "No autorizado" });
+    if (!companyId) {
+      console.warn("⚠️ No hay companyId en el token");
+      return res.status(401).json({ 
+        success: false,
+        message: "No autorizado" 
+      });
+    }
 
-    // 🔁 Marcar todas como leídas
-    const [updatedProjects, updatedJobs] = await Promise.all([
-      prisma.projectApplication.updateMany({
-        where: {
-          project: { companyId },
-          vistoCompany: false,
-        },
-        data: { vistoCompany: true },
-      }),
-      prisma.jobApplication.updateMany({
-        where: {
-          job: { companyId },
-          vistoCompany: false,
-        },
-        data: { vistoCompany: true },
-      }),
-    ]);
+    console.log("✅ CompanyId validado:", companyId);
 
-    console.log(`✅ Empresa ${companyId} marcó ${updatedProjects.count + updatedJobs.count} como leídas`);
+    // Como no tenemos campo vistoCompany, simplemente devolvemos éxito
+    // En una implementación futura se podría agregar este campo al schema
+    console.log(`✅ Empresa ${companyId} marcó notificaciones como leídas`);
 
-    res.json({
-      message: "✅ Postulaciones marcadas como vistas",
-      updated: updatedProjects.count + updatedJobs.count,
+    return res.status(200).json({
+      success: true,
+      message: "✅ Notificaciones marcadas como vistas",
+      updated: 0 // Por ahora no hay campo para marcar como leídas
     });
   } catch (error) {
-    console.error("❌ Error marcando postulaciones de empresa como vistas:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    console.error("❌ Error marcando notificaciones como vistas:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor"
+    });
+  }
+};
+
+// 🟣 Actualizar estado de aplicación de trabajo (PARA EMPRESAS) - USANDO LÓGICA DE PROYECTOS
+export const updateJobApplicationStatusController = async (req, res) => {
+  try {
+    console.log("🚀 === INICIO ACTUALIZAR ESTADO APLICACIÓN TRABAJO ===");
+    console.log("📋 Headers recibidos:", req.headers);
+    console.log("🔑 Token de autorización:", req.headers.authorization);
+    console.log("👤 Usuario del token:", req.user);
+    console.log("📦 Datos del body:", req.body);
+    console.log("📋 Params:", req.params);
+
+    const id = Number(req.params.id);
+    const { status } = req.body;
+    const companyId = req.user?.id;
+
+    console.log("✅ Datos extraídos:", { id, status, companyId });
+
+    if (!status) {
+      console.warn("⚠️ Falta el nuevo estado");
+      return res.status(400).json({ 
+        success: false,
+        message: "Falta el nuevo estado" 
+      });
+    }
+
+    console.log("🔌 Verificando conexión a Prisma...");
+    console.log("📊 Prisma client:", !!prisma);
+    console.log("📊 Prisma jobApplication:", !!prisma?.jobApplication);
+
+    // 1. Primero obtener la aplicación para verificar permisos y datos
+    const jobApplication = await prisma.jobApplication.findUnique({
+      where: { id },
+      include: {
+        job: {
+          select: {
+            id: true,
+            companyId: true,
+            title: true
+          }
+        }
+      }
+    });
+
+    if (!jobApplication) {
+      console.warn("❌ Aplicación de trabajo no encontrada:", id);
+      return res.status(404).json({ 
+        success: false,
+        message: "Aplicación de trabajo no encontrada" 
+      });
+    }
+
+    console.log("✅ Aplicación de trabajo encontrada:", jobApplication.job.title);
+
+    // 2. Verificar que la empresa es dueña del trabajo
+    if (jobApplication.job.companyId !== companyId) {
+      console.warn("❌ No autorizado para modificar esta aplicación:", { id, companyId, jobCompanyId: jobApplication.job.companyId });
+      return res.status(403).json({ 
+        success: false,
+        message: "No autorizado para modificar esta aplicación" 
+      });
+    }
+
+    // 3. VALIDACIÓN ESTRICTA: Solo permitir cambios si está PENDIENTE
+    if (jobApplication.status !== "PENDIENTE") {
+      console.warn("❌ Intento de modificar aplicación no pendiente:", id, jobApplication.status);
+      return res.status(400).json({ 
+        success: false,
+        message: `No se puede modificar una postulación que está ${jobApplication.status === "ACEPTADO" ? "aceptada" : "rechazada"}. Solo se pueden modificar postulaciones pendientes.` 
+      });
+    }
+
+    let updatedApplication;
+
+    // 4. LÓGICA PRINCIPAL: Si se acepta una, rechazar las demás automáticamente
+    if (status === "ACEPTADO") {
+      console.log("🔄 Aceptando aplicación y rechazando las demás...");
+      await prisma.$transaction(async (tx) => {
+        // a) Rechazar TODAS las otras aplicaciones al mismo trabajo
+        await tx.jobApplication.updateMany({
+        where: {
+            jobId: jobApplication.jobId, // Mismo trabajo
+            id: { not: id }, // Excluir la actual
+            status: { not: "ACEPTADO" } // No modificar las ya aceptadas
+          },
+          data: { 
+            status: "RECHAZADO"
+          }
+        });
+
+        // b) Actualizar la aplicación actual a ACEPTADO
+        updatedApplication = await tx.jobApplication.update({
+          where: { id },
+          data: { status },
+          include: {
+            user: { select: { nombre: true, email: true } },
+            job: { select: { title: true } },
+          }
+        });
+      });
+
+      console.log(`✅ Aceptada aplicación ${id} y RECHAZADAS automáticamente las demás del trabajo ${jobApplication.jobId}`);
+
+    } else {
+      // Para otros estados (RECHAZADO, PENDIENTE), solo actualizar esta aplicación
+      console.log("🔄 Actualizando aplicación individual...");
+      updatedApplication = await prisma.jobApplication.update({
+        where: { id },
+        data: { status },
+        include: {
+          user: { select: { nombre: true, email: true } },
+          job: { select: { title: true } },
+        }
+      });
+    }
+
+    console.log("✅ Aplicación de trabajo actualizada:", updatedApplication);
+    console.log("🏁 === FIN ACTUALIZAR ESTADO APLICACIÓN TRABAJO ===");
+
+    return res.status(200).json({
+      success: true,
+      message: "Estado de aplicación actualizado correctamente",
+      data: updatedApplication
+    });
+
+  } catch (error) {
+    console.error("❌ === ERROR ACTUALIZAR ESTADO APLICACIÓN TRABAJO ===");
+    console.error("💥 Error completo:", error);
+    console.error("📝 Mensaje de error:", error.message);
+    console.error("🏷️ Código de error:", error.code);
+    console.error("📊 Stack trace:", error.stack);
+    console.error("🏁 === FIN ERROR ===");
+
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_ERROR",
+      details: "Error interno del servidor"
+    });
   }
 };
 // 🟣 Marcar TODAS las notificaciones del usuario como leídas
@@ -475,21 +1051,19 @@ export const markAllAsReadForUserController = async (req, res) => {
     if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
 
     const [updatedProjects, updatedJobs] = await Promise.all([
-      prisma.projectApplication.updateMany({
+      prisma.application.updateMany({
         where: {
           userId,
-          visto: false,
           status: { in: ["ACEPTADO", "RECHAZADO"] },
         },
-        data: { visto: true },
+        data: { updatedAt: new Date() },
       }),
       prisma.jobApplication.updateMany({
         where: {
           userId,
-          visto: false,
           status: { in: ["ACEPTADO", "RECHAZADO"] },
         },
-        data: { visto: true },
+        data: { updatedAt: new Date() },
       }),
     ]);
 

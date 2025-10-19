@@ -5,6 +5,7 @@ import {
   listPublicProjectsController,
   getCompanyProjectsController,
   getProjectByIdController,
+  getProjectsController,
 } from "../controllers/projectController.js";
 import { requireAuth, requireCompany } from "../middlewares/auth.js";
 import { validateId, validateRequired, sanitizeInput } from "../middlewares/validation.js";
@@ -20,7 +21,6 @@ router.post("/",
   requireAuth, 
   requireCompany,
   sanitizeInput,
-  validateRequired(["title", "description"]),
   createProjectController
 );
 
@@ -32,7 +32,7 @@ router.get("/company/me", requireAuth, requireCompany, getCompanyProjectsControl
 // ===========================
 
 // Ver todos los proyectos disponibles públicamente
-router.get("/", listPublicProjectsController);
+router.get("/", getProjectsController);
 
 // Ver detalles de un proyecto específico por ID
 router.get("/:id", validateId, getProjectByIdController);
