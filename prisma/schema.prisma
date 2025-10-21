@@ -3,7 +3,7 @@
 // ==========================================================
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -74,6 +74,11 @@ model Company {
   tamano        String?
   descripcion   String?
   logoUrl       String?
+  mision        String?           // 🆕
+  vision        String?           // 🆕
+  redesSociales String?           // 🆕 Podés guardar un JSON o una cadena (ver abajo)
+  empleados     Int?              // 🆕
+  anioFundacion Int? 
 
   // Back-relations
   projects      Project[]

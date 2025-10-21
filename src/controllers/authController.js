@@ -1,5 +1,3 @@
-// src/controllers/authController.js
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../database/prismaClient.js";
@@ -306,6 +304,11 @@ export const getProfile = async (req, res) => {
           tamano: companyWithoutPassword.tamano,
           descripcion: companyWithoutPassword.descripcion,
           logoUrl: companyWithoutPassword.logoUrl,
+          mision: companyWithoutPassword.mision, // 🆕
+          vision: companyWithoutPassword.vision, // 🆕
+          redesSociales: companyWithoutPassword.redesSociales, // 🆕
+          empleados: companyWithoutPassword.empleados, // 🆕
+          anioFundacion: companyWithoutPassword.anioFundacion, // 🆕
           role: companyWithoutPassword.role,
           createdAt: companyWithoutPassword.createdAt,
           updatedAt: companyWithoutPassword.updatedAt
@@ -390,8 +393,6 @@ export const updateProfile = async (req, res) => {
         }
       }
 
-
-
       console.log("📝 Datos para actualizar:", updateData);
 
       const updated = await prisma.user.update({
@@ -447,10 +448,15 @@ export const updateProfile = async (req, res) => {
         sitioWeb,
         tamano,
         descripcion,
-        logoUrl
+        logoUrl,
+        mision,
+        vision,
+        redesSociales,
+        empleados,
+        anioFundacion
       } = req.body;
 
-      console.log("✅ Datos extraídos:", { nombreEmpresa, rut, telefono, direccion, ciudad, sector, sitioWeb, tamano, descripcion, logoUrl });
+      console.log("✅ Datos extraídos:", { nombreEmpresa, rut, telefono, direccion, ciudad, sector, sitioWeb, tamano, descripcion, logoUrl, mision, vision, redesSociales, empleados, anioFundacion });
       
       // Preparar datos para actualización
       const updateData = {};
@@ -465,6 +471,11 @@ export const updateProfile = async (req, res) => {
       if (tamano !== undefined) updateData.tamano = tamano;
       if (descripcion !== undefined) updateData.descripcion = descripcion;
       if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+      if (mision !== undefined) updateData.mision = mision;
+      if (vision !== undefined) updateData.vision = vision;
+      if (redesSociales !== undefined) updateData.redesSociales = redesSociales;
+      if (empleados !== undefined) updateData.empleados = parseInt(empleados);
+      if (anioFundacion !== undefined) updateData.anioFundacion = parseInt(anioFundacion);
 
       console.log("📝 Datos para actualizar:", updateData);
 
@@ -496,6 +507,11 @@ export const updateProfile = async (req, res) => {
           tamano: updatedWithoutPassword.tamano,
           descripcion: updatedWithoutPassword.descripcion,
           logoUrl: updatedWithoutPassword.logoUrl,
+          mision: updatedWithoutPassword.mision,
+          vision: updatedWithoutPassword.vision,
+          redesSociales: updatedWithoutPassword.redesSociales,
+          empleados: updatedWithoutPassword.empleados,
+          anioFundacion: updatedWithoutPassword.anioFundacion,
           role: updatedWithoutPassword.role,
           createdAt: updatedWithoutPassword.createdAt,
           updatedAt: updatedWithoutPassword.updatedAt
@@ -525,4 +541,3 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
-
