@@ -560,6 +560,7 @@ export const getNotificationCountController = async (req, res) => {
 };
 
 // 🟣 Usuario actualiza su propia postulación (Hecho/No hecho)
+// 🟣 Usuario actualiza su propia postulación (Hecho/No hecho) - VERSIÓN CORREGIDA
 export const updateMyApplicationStatusController = async (req, res) => {
   try {
     console.log("🚀 === INICIO ACTUALIZAR ESTADO POSTULACIÓN USUARIO ===");
@@ -592,6 +593,7 @@ export const updateMyApplicationStatusController = async (req, res) => {
       });
     }
 
+    // Obtener la aplicación con datos del proyecto y empresa
     const application = await prisma.application.findFirst({
       where: { id, userId },
       include: { 
@@ -627,35 +629,63 @@ export const updateMyApplicationStatusController = async (req, res) => {
       },
     });
 
-    // 🆕 Si marca como "Hecho", se agrega al perfil del usuario
+    // 🆕 LÓGICA CORREGIDA: Si marca como "Hecho", se agrega al perfil del usuario
     if (status.toUpperCase() === "HECHO") {
       console.log(`🎯 Marcando proyecto como completado: ${application.project.title}`);
 
       try {
-        await prisma.project.update({
-          where: { id: application.project.id },
-          data: { isCompleted: true },
+        // Verificar si ya existe en completedProjects para evitar duplicados
+        const existingCompleted = await prisma.completedProject.findFirst({
+          where: {
+            userId: userId,
+            projectId: application.project.id
+          }
         });
 
-        const projectDetails = await prisma.project.findUnique({
-          where: { id: application.project.id },
-          include: { company: true },
-        });
-
-        if (projectDetails) {
+        if (!existingCompleted) {
+          // Crear el proyecto completado con todos los datos
           await prisma.completedProject.create({
             data: {
-              title: projectDetails.title,
-              description: `Proyecto completado para ${projectDetails.company.nombreEmpresa}: ${projectDetails.description}`,
+              title: application.project.title,
+              description: application.project.description,
+              skills: application.project.skills,
+              duration: application.project.duration,
+              modality: application.project.modality,
+              remuneration: application.project.remuneration,
+              companyName: application.project.company.nombreEmpresa,
               userId: userId,
-              projectId: projectDetails.id,
+              projectId: application.project.id,
+              startDate: application.createdAt, // Fecha de postulación como inicio
+              endDate: new Date() // Fecha actual como finalización
             },
           });
 
-          console.log(`✅ Proyecto agregado al perfil del usuario`);
+          console.log(`✅ Proyecto "${application.project.title}" agregado al perfil del usuario`);
+        } else {
+          console.log(`ℹ️ Proyecto ya estaba en completedProjects`);
         }
+
       } catch (err) {
-        console.error("❌ Error marcando proyecto como completado:", err);
+        console.error("❌ Error creando completed project:", err);
+        // No devolver error al usuario, solo log
+      }
+    }
+
+    // 🆕 LÓGICA: Si cambia a "NO_HECHO", eliminar de completedProjects
+    if (status.toUpperCase() === "NO_HECHO") {
+      console.log(`🗑️ Eliminando proyecto de completados: ${application.project.title}`);
+      
+      try {
+        await prisma.completedProject.deleteMany({
+          where: {
+            userId: userId,
+            projectId: application.project.id
+          }
+        });
+        
+        console.log(`✅ Proyecto eliminado de completados`);
+      } catch (err) {
+        console.error("❌ Error eliminando de completed projects:", err);
       }
     }
 

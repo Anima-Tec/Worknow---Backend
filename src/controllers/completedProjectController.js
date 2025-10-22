@@ -45,13 +45,11 @@ export const addCompletedProjectController = async (req, res) => {
 };
 
 // 🟣 Obtener proyectos completados del usuario
+// 🟣 Obtener proyectos completados del usuario - VERSIÓN ACTUALIZADA
 export const getMyCompletedProjectsController = async (req, res) => {
   try {
     console.log("🚀 === INICIO OBTENER PROYECTOS COMPLETADOS ===");
-    console.log("📋 Headers recibidos:", req.headers);
-    console.log("🔑 Token de autorización:", req.headers.authorization);
-    console.log("👤 Usuario del token:", req.user);
-
+    
     const userId = req.user?.id;
     if (!userId) {
       console.warn("⚠️ No hay userId en el token");
@@ -63,38 +61,37 @@ export const getMyCompletedProjectsController = async (req, res) => {
 
     console.log("✅ UserId validado:", userId);
 
-    // Verificar conexión a la base de datos
-    console.log("🔌 Verificando conexión a Prisma...");
-    console.log("📊 Prisma client:", !!prisma);
-    console.log("📊 Prisma completedProject:", !!prisma?.completedProject);
-
     const completedProjects = await prisma.completedProject.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("📊 Proyectos completados encontrados:", completedProjects.length);
-    console.log("📋 Proyectos completados raw:", completedProjects);
-
     console.log(`📋 Usuario ${userId} tiene ${completedProjects.length} proyectos completados`);
-    console.log("🏁 === FIN OBTENER PROYECTOS COMPLETADOS ===");
+
+    // Formatear la respuesta para el frontend
+    const formattedProjects = completedProjects.map(project => ({
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      skills: project.skills,
+      duration: project.duration,
+      modality: project.modality,
+      remuneration: project.remuneration,
+      companyName: project.companyName,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      createdAt: project.createdAt
+    }));
 
     return res.status(200).json({
       success: true,
-      data: completedProjects
+      data: formattedProjects
     });
   } catch (error) {
-    console.error("❌ === ERROR OBTENER PROYECTOS COMPLETADOS ===");
-    console.error("💥 Error completo:", error);
-    console.error("📝 Mensaje de error:", error.message);
-    console.error("🏷️ Código de error:", error.code);
-    console.error("📊 Stack trace:", error.stack);
-    console.error("🏁 === FIN ERROR ===");
-
+    console.error("❌ Error obteniendo proyectos completados:", error);
     return res.status(500).json({
       success: false,
-      message: "Error interno del servidor",
-      details: process.env.NODE_ENV === 'development' ? error.message : "Algo salió mal al obtener proyectos completados"
+      message: "Error interno del servidor"
     });
   }
 };
