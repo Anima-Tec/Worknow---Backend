@@ -151,16 +151,23 @@ export const getCompanyApplicationsController = async (req, res) => {
     
     console.log("📊 Aplicaciones de proyectos encontradas:", projectApplications.length);
 
-    // Formatear aplicaciones de proyectos con estructura requerida
-    const formattedApplications = projectApplications.map((app) => ({
-      id: app.id,
-      status: app.status,
-      createdAt: app.createdAt,
-      applicantName: app.user?.nombre || "Sin nombre",
-      applicantEmail: app.user?.email || "Email no disponible",
-      projectId: app.projectId,
-      projectTitle: app.project.title,
-    }));
+   const formattedApplications = projectApplications.map((app) => {
+  let displayStatus = app.status;
+
+  // 🔹 Corrige cómo se ve en el panel de empresa
+  if (app.status === "HECHO") displayStatus = "COMPLETADO";
+  if (app.status === "NO_HECHO") displayStatus = "NO COMPLETADO";
+
+  return {
+    id: app.id,
+    status: displayStatus,
+    createdAt: app.createdAt,
+    applicantName: app.user?.nombre || "Sin nombre",
+    applicantEmail: app.user?.email || "Email no disponible",
+    projectId: app.projectId,
+    projectTitle: app.project.title,
+  };
+});
 
     console.log(`📋 Total de aplicaciones de proyectos: ${formattedApplications.length}`);
     console.log("🏁 === FIN OBTENER APLICACIONES DE PROYECTOS DE EMPRESA ===");
@@ -559,7 +566,7 @@ export const getNotificationCountController = async (req, res) => {
   }
 };
 
-// 🟣 Usuario actualiza su propia postulación (Hecho/No hecho)
+
 // 🟣 Usuario actualiza su propia postulación (Hecho/No hecho) - VERSIÓN CORREGIDA
 export const updateMyApplicationStatusController = async (req, res) => {
   try {
@@ -1106,4 +1113,3 @@ export const markAllAsReadForUserController = async (req, res) => {
     res.status(500).json({ message: "Error marcando notificaciones" });
   }
 };
-
